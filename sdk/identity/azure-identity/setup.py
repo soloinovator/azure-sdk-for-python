@@ -59,10 +59,10 @@ setup(
     ),
     python_requires=">=3.8",
     install_requires=[
-        "azure-core>=1.23.0",
+        "azure-core>=1.31.0",
         "cryptography>=2.5",
-        "msal>=1.24.0",
-        "msal-extensions>=0.3.0",
+        "msal>=1.30.0",
+        "msal-extensions>=1.2.0",
         "typing-extensions>=4.0.0",
     ],
 )

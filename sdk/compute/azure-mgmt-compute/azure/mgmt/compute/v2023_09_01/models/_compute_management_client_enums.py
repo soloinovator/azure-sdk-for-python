@@ -279,11 +279,11 @@ class IPVersions(str, Enum, metaclass=CaseInsensitiveEnumMeta):
 
 
 class LinuxPatchAssessmentMode(str, Enum, metaclass=CaseInsensitiveEnumMeta):
-    """Specifies the mode of VM Guest Patch Assessment for the IaaS virtual machine.:code:`<br
-    />`:code:`<br />` Possible values are::code:`<br />`:code:`<br />` **ImageDefault** - You
-    control the timing of patch assessments on a virtual machine. :code:`<br />`:code:`<br />`
-    **AutomaticByPlatform** - The platform will trigger periodic patch assessments. The property
-    provisionVMAgent must be true.
+    """Specifies the mode of VM Guest Patch Assessment for the IaaS virtual machine.\\ :code:`<br
+    />`\\ :code:`<br />` Possible values are:\\ :code:`<br />`\\ :code:`<br />` **ImageDefault** -
+    You control the timing of patch assessments on a virtual machine. :code:`<br />`\\ :code:`<br
+    />` **AutomaticByPlatform** - The platform will trigger periodic patch assessments. The
+    property provisionVMAgent must be true.
     """
 
     IMAGE_DEFAULT = "ImageDefault"
@@ -301,11 +301,11 @@ class LinuxVMGuestPatchAutomaticByPlatformRebootSetting(str, Enum, metaclass=Cas
 
 class LinuxVMGuestPatchMode(str, Enum, metaclass=CaseInsensitiveEnumMeta):
     """Specifies the mode of VM Guest Patching to IaaS virtual machine or virtual machines associated
-    to virtual machine scale set with OrchestrationMode as Flexible.:code:`<br />`:code:`<br />`
-    Possible values are::code:`<br />`:code:`<br />` **ImageDefault** - The virtual machine's
-    default patching configuration is used. :code:`<br />`:code:`<br />` **AutomaticByPlatform** -
-    The virtual machine will be automatically updated by the platform. The property
-    provisionVMAgent must be true.
+    to virtual machine scale set with OrchestrationMode as Flexible.\\ :code:`<br />`\\ :code:`<br
+    />` Possible values are:\\ :code:`<br />`\\ :code:`<br />` **ImageDefault** - The virtual
+    machine's default patching configuration is used. :code:`<br />`\\ :code:`<br />`
+    **AutomaticByPlatform** - The virtual machine will be automatically updated by the platform.
+    The property provisionVMAgent must be true.
     """
 
     IMAGE_DEFAULT = "ImageDefault"
@@ -470,6 +470,7 @@ class PublicIPAddressSkuTier(str, Enum, metaclass=CaseInsensitiveEnumMeta):
     """Specify public IP sku tier."""
 
     REGIONAL = "Regional"
+    GLOBAL = "Global"
     GLOBAL_ENUM = "Global"
 
 
@@ -612,11 +613,11 @@ class StorageAccountTypes(str, Enum, metaclass=CaseInsensitiveEnumMeta):
 
 
 class UpgradeMode(str, Enum, metaclass=CaseInsensitiveEnumMeta):
-    """Specifies the mode of an upgrade to virtual machines in the scale set.:code:`<br />`:code:`<br
-    />` Possible values are::code:`<br />`:code:`<br />` **Manual** - You  control the application
-    of updates to virtual machines in the scale set. You do this by using the manualUpgrade
-    action.:code:`<br />`:code:`<br />` **Automatic** - All virtual machines in the scale set are
-    automatically updated at the same time.
+    """Specifies the mode of an upgrade to virtual machines in the scale set.\\ :code:`<br />`\\
+    :code:`<br />` Possible values are:\\ :code:`<br />`\\ :code:`<br />` **Manual** - You  control
+    the application of updates to virtual machines in the scale set. You do this by using the
+    manualUpgrade action.\\ :code:`<br />`\\ :code:`<br />` **Automatic** - All virtual machines in
+    the scale set are  automatically updated at the same time.
     """
 
     AUTOMATIC = "Automatic"
@@ -678,9 +679,9 @@ class VirtualMachineSizeTypes(str, Enum, metaclass=CaseInsensitiveEnumMeta):
     """Specifies the size of the virtual machine. The enum data type is currently deprecated and will
     be removed by December 23rd 2023. The recommended way to get the list of available sizes is
     using these APIs: `List all available virtual machine sizes in an availability set
-    <https://docs.microsoft.com/rest/api/compute/availabilitysets/listavailablesizes>`_\ , `List
+    <https://docs.microsoft.com/rest/api/compute/availabilitysets/listavailablesizes>`_\\ , `List
     all available virtual machine sizes in a region
-    <https://docs.microsoft.com/rest/api/compute/resourceskus/list>`_\ , `List all available
+    <https://docs.microsoft.com/rest/api/compute/resourceskus/list>`_\\ , `List all available
     virtual machine sizes for resizing
     <https://docs.microsoft.com/rest/api/compute/virtualmachines/listavailablesizes>`_. For more
     information about virtual machine sizes, see `Sizes for virtual machines
@@ -913,11 +914,11 @@ class VMGuestPatchRebootStatus(str, Enum, metaclass=CaseInsensitiveEnumMeta):
 
 
 class WindowsPatchAssessmentMode(str, Enum, metaclass=CaseInsensitiveEnumMeta):
-    """Specifies the mode of VM Guest patch assessment for the IaaS virtual machine.:code:`<br
-    />`:code:`<br />` Possible values are::code:`<br />`:code:`<br />` **ImageDefault** - You
-    control the timing of patch assessments on a virtual machine.:code:`<br />`:code:`<br />`
-    **AutomaticByPlatform** - The platform will trigger periodic patch assessments. The property
-    provisionVMAgent must be true.
+    """Specifies the mode of VM Guest patch assessment for the IaaS virtual machine.\\ :code:`<br
+    />`\\ :code:`<br />` Possible values are:\\ :code:`<br />`\\ :code:`<br />` **ImageDefault** -
+    You control the timing of patch assessments on a virtual machine.\\ :code:`<br />`\\ :code:`<br
+    />` **AutomaticByPlatform** - The platform will trigger periodic patch assessments. The
+    property provisionVMAgent must be true.
     """
 
     IMAGE_DEFAULT = "ImageDefault"
@@ -935,15 +936,15 @@ class WindowsVMGuestPatchAutomaticByPlatformRebootSetting(str, Enum, metaclass=C
 
 class WindowsVMGuestPatchMode(str, Enum, metaclass=CaseInsensitiveEnumMeta):
     """Specifies the mode of VM Guest Patching to IaaS virtual machine or virtual machines associated
-    to virtual machine scale set with OrchestrationMode as Flexible.:code:`<br />`:code:`<br />`
-    Possible values are::code:`<br />`:code:`<br />` **Manual** - You  control the application of
-    patches to a virtual machine. You do this by applying patches manually inside the VM. In this
-    mode, automatic updates are disabled; the property WindowsConfiguration.enableAutomaticUpdates
-    must be false:code:`<br />`:code:`<br />` **AutomaticByOS** - The virtual machine will
-    automatically be updated by the OS. The property WindowsConfiguration.enableAutomaticUpdates
-    must be true. :code:`<br />`:code:`<br />` **AutomaticByPlatform** - the virtual machine will
-    automatically updated by the platform. The properties provisionVMAgent and
-    WindowsConfiguration.enableAutomaticUpdates must be true.
+    to virtual machine scale set with OrchestrationMode as Flexible.\\ :code:`<br />`\\ :code:`<br
+    />` Possible values are:\\ :code:`<br />`\\ :code:`<br />` **Manual** - You  control the
+    application of patches to a virtual machine. You do this by applying patches manually inside
+    the VM. In this mode, automatic updates are disabled; the property
+    WindowsConfiguration.enableAutomaticUpdates must be false\\ :code:`<br />`\\ :code:`<br />`
+    **AutomaticByOS** - The virtual machine will automatically be updated by the OS. The property
+    WindowsConfiguration.enableAutomaticUpdates must be true. :code:`<br />`\\ :code:`<br />`
+    **AutomaticByPlatform** - the virtual machine will automatically updated by the platform. The
+    properties provisionVMAgent and WindowsConfiguration.enableAutomaticUpdates must be true.
     """
 
     MANUAL = "Manual"

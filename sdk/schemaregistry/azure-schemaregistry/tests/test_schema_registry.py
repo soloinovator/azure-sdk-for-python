@@ -1,3 +1,9 @@
+# --------------------------------------------------------------------------
+#
+# Copyright (c) Microsoft Corporation. All rights reserved.
+#
+# The MIT License (MIT)
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the ""Software""), to
 # deal in the Software without restriction, including without limitation the
@@ -22,11 +28,12 @@ import functools
 import pytest
 import json
 
-from azure.schemaregistry import SchemaRegistryClient
+from azure.schemaregistry import SchemaRegistryClient, SchemaFormat
 from azure.identity import ClientSecretCredential
 from azure.core.exceptions import ClientAuthenticationError, ServiceRequestError, HttpResponseError
 
 from devtools_testutils import AzureRecordedTestCase, EnvironmentVariableLoader, recorded_by_proxy
+from mock_transport import MockResponse, MockTransport
 
 # TODO: add protobuf env var for live testing when protobuf changes have been rolled out
 is_livetest = str(os.getenv("AZURE_TEST_RUN_LIVE")).lower()
@@ -36,8 +43,8 @@ sr_namespaces = {
     "schemaregistry_custom_fully_qualified_namespace": "fake_resource_custom.servicebus.windows.net",
     "schemaregistry_group": "fakegroup",
 }
-if is_livetest != "true":
-    sr_namespaces["schemaregistry_protobuf_fully_qualified_namespace"] = "fake_resource_protobuf.servicebus.windows.net"
+# if is_livetest != "true":
+#    sr_namespaces["schemaregistry_protobuf_fully_qualified_namespace"] = "fake_resource_protobuf.servicebus.windows.net"
 
 SchemaRegistryEnvironmentVariableLoader = functools.partial(
     EnvironmentVariableLoader, "schemaregistry", **sr_namespaces
@@ -59,32 +66,33 @@ JSON_SCHEMA = {
 }
 JSON_SCHEMA_STR = json.dumps(JSON_SCHEMA, separators=(",", ":"))
 CUSTOM_SCHEMA_STR = "My favorite color is yellow."
-current_path = os.getcwd()
-current_folder = current_path.split("\\")[-1]
-if current_folder == "tests":
-    proto_file = os.path.join(os.getcwd(), "person.proto")
-else:  # current_folder == "azure-schemaregistry"
-    proto_file = os.path.join(os.getcwd(), "tests", "person.proto")
-
-with open(proto_file, "r") as f:
-    PROTOBUF_SCHEMA_STR = f.read()
+# current_path = os.getcwd()
+# "\\" for Windows, "/" for Linux
+# current_folder = current_path.split("\\")[-1].split("/")[-1]
+# if current_folder == "tests":
+#    proto_file = os.path.join(os.getcwd(), "person.proto")
+# else:  # current_folder == "azure-schemaregistry"
+#    proto_file = os.path.join(os.getcwd(), "tests", "person.proto")
+#
+# with open(proto_file, "r") as f:
+#    PROTOBUF_SCHEMA_STR = f.read()
 
 AVRO_FORMAT = "Avro"
 JSON_FORMAT = "Json"
 CUSTOM_FORMAT = "Custom"
-PROTOBUF_FORMAT = "Protobuf"
+# PROTOBUF_FORMAT = "Protobuf"
 
 avro_args = (AVRO_FORMAT, AVRO_SCHEMA_STR)
 json_args = (JSON_FORMAT, JSON_SCHEMA_STR)
 custom_args = (CUSTOM_FORMAT, CUSTOM_SCHEMA_STR)
-protobuf_args = (PROTOBUF_FORMAT, PROTOBUF_SCHEMA_STR)
+# protobuf_args = (PROTOBUF_FORMAT, PROTOBUF_SCHEMA_STR)
 
 # TODO: add protobuf schema group to arm template + enable livetests
 format_params = [avro_args, json_args, custom_args]
 format_ids = [AVRO_FORMAT, JSON_FORMAT, CUSTOM_FORMAT]
-if is_livetest != "true":  # protobuf changes have not been rolled out
-    format_params.append(protobuf_args)
-    format_ids.append(PROTOBUF_FORMAT)
+# if is_livetest != "true":  # protobuf changes have not been rolled out
+#    format_params.append(protobuf_args)
+#    format_ids.append(PROTOBUF_FORMAT)
 
 # TODO: remove when protobuf changes have been rolled out
 format_params_no_protobuf = [avro_args, json_args, custom_args]
@@ -412,16 +420,87 @@ class TestSchemaRegistry(AzureRecordedTestCase):
         schemaregistry_group = kwargs.pop("schemaregistry_group")
 
         sr_client = self.create_client(fully_qualified_namespace=schemaregistry_fully_qualified_namespace)
-        schema_groups = sr_client._generated_client.list_schema_groups()
+        schema_groups = sr_client._generated_client._list_schema_groups()
         for group in schema_groups:
             assert group == schemaregistry_group
 
         name = "test-schema1"
         sr_client.register_schema(schemaregistry_group, name, schema_str, format)
 
-        schema_versions = sr_client._generated_client.list_schema_versions(schemaregistry_group, name)
+        schema_versions = sr_client._generated_client._list_schema_versions(schemaregistry_group, name)
         versions = []
         for version in schema_versions:
             versions.append(version)
 
         assert len(versions) > 0
+
+    def test_get_schema_unknown_content_type(self, **kwargs):
+
+        # test known content type first
+        avro_schema_id = "avro_schema_id_123"
+        avro_schema_name = "avro_name"
+        avro_group_name = "avro_group"
+        avro_schema_version = "1"
+        avro_content_type = "application/json; serialization=Avro"
+        transport = MockTransport(
+            response=MockResponse(
+                schema_id=avro_schema_id,
+                schema_name=avro_schema_name,
+                schema_group_name=avro_group_name,
+                schema_version=avro_schema_version,
+                content_type=avro_content_type,
+            )
+        )
+        mock_fqn = f"schemaregistry_fqn"
+        credential = self.get_credential(SchemaRegistryClient)
+        mock_client = SchemaRegistryClient(
+            fully_qualified_namespace=mock_fqn, credential=credential, transport=transport
+        )
+
+        with mock_client:
+
+            # content type should return SchemaFormat enum
+            schema = mock_client.get_schema(avro_schema_id)
+            assert schema.properties.format == SchemaFormat.AVRO
+
+            # get unknown schema with content type of format "application/json; serialization=<format>"
+            foo_schema_id = "foo_schema_id_123"
+            foo_schema_name = "foo_name"
+            foo_group_name = "foo_group"
+            foo_schema_version = "1"
+            foo_content_type = "application/json; serialization=Foo"
+            transport._response = MockResponse(
+                schema_id=foo_schema_id,
+                schema_name=foo_schema_name,
+                schema_group_name=foo_group_name,
+                schema_version=foo_schema_version,
+                content_type=foo_content_type,
+            )
+            # get unknown schema by id should return format of the content type string
+            schema = mock_client.get_schema(foo_schema_id)
+            assert schema.properties.format == foo_content_type
+            # get unknown schema by version should return format of the content type string
+            schema = mock_client.get_schema(group_name=foo_group_name, name=foo_schema_name, version=foo_schema_version)
+            assert schema.properties.format == foo_content_type
+
+            # get unknown schema with content type of format "contenttype/<unknown>"
+            bar_schema_id = "bar_schema_id_123"
+            bar_schema_name = "bar_name"
+            bar_group_name = "bar_group"
+            bar_schema_version = "1"
+            bar_content_type = "contenttype/bar"
+            transport._response = MockResponse(
+                schema_id=bar_schema_id,
+                schema_name=bar_schema_name,
+                schema_group_name=bar_group_name,
+                schema_version=bar_schema_version,
+                content_type=bar_content_type,
+            )
+            schema = mock_client.get_schema(bar_schema_id)
+
+            # get unknown schema by id should return format of the content type string
+            schema = mock_client.get_schema(bar_schema_id)
+            assert schema.properties.format == bar_content_type
+            # get unknown schema by version should return format of the content type string
+            schema = mock_client.get_schema(group_name=bar_group_name, name=bar_schema_name, version=bar_schema_version)
+            assert schema.properties.format == bar_content_type

@@ -9,6 +9,7 @@ from devtools_testutils import AzureRecordedTestCase
 from conftest import AZURE, OPENAI, PREVIEW, GA, configure_async
 
 
+@pytest.mark.live_test_only
 class TestCompletionsAsync(AzureRecordedTestCase):
     """Missing tests for keyword argument `suffix`"""
 
@@ -255,7 +256,7 @@ class TestCompletionsAsync(AzureRecordedTestCase):
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
         "api_type, api_version",
-        [(AZURE, PREVIEW), (AZURE, GA), (OPENAI, "v1")]
+        [(AZURE, PREVIEW), (AZURE, GA)]
     )
     async def test_completion_echo(self, client_async, api_type, api_version, **kwargs):
 

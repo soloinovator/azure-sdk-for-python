@@ -21,7 +21,7 @@ from azure.cosmos._routing import routing_range
 from azure.cosmos._routing.collection_routing_map import CollectionRoutingMap
 from azure.cosmos.aio import CosmosClient, _retry_utility_async
 from azure.cosmos.diagnostics import RecordDiagnostics
-from azure.cosmos.http_constants import HttpHeaders, StatusCodes
+from azure.cosmos.http_constants import HttpHeaders, StatusCodes, SubStatusCodes
 from azure.cosmos.partition_key import PartitionKey
 
 
@@ -249,7 +249,7 @@ class TestSubpartitionCrudAsync(unittest.IsolatedAsyncioTestCase):
             self.fail('Operation Should Fail.')
         except exceptions.CosmosHttpResponseError as error:
             assert error.status_code == StatusCodes.BAD_REQUEST
-            assert "Partition key [[]] is invalid" in error.message
+            assert error.sub_status == SubStatusCodes.PARTITION_KEY_MISMATCH
             del self.last_headers[:]
 
         await created_db.delete_container(created_collection.id)
@@ -411,7 +411,7 @@ class TestSubpartitionCrudAsync(unittest.IsolatedAsyncioTestCase):
             self.fail("Test did not fail as expected")
         except exceptions.CosmosHttpResponseError as error:
             assert error.status_code == StatusCodes.BAD_REQUEST
-            assert "Partition key provided either doesn't correspond to definition in the collection" in error.message
+            assert error.sub_status == SubStatusCodes.PARTITION_KEY_MISMATCH
 
         # using incomplete partition key in read item
         try:
@@ -419,7 +419,7 @@ class TestSubpartitionCrudAsync(unittest.IsolatedAsyncioTestCase):
             self.fail("Test did not fail as expected")
         except exceptions.CosmosHttpResponseError as error:
             assert error.status_code, StatusCodes.BAD_REQUEST
-            assert "Partition key provided either doesn't correspond to definition in the collection" in error.message
+            assert error.sub_status == SubStatusCodes.PARTITION_KEY_MISMATCH
 
         # using mix value types for partition key
         doc_mixed_types = {'id': "doc4",
@@ -647,6 +647,30 @@ class TestSubpartitionCrudAsync(unittest.IsolatedAsyncioTestCase):
         # Both EPK range 4 min and max should be less than partition 2's min and max
         assert EPK_range_4.min < olr_4_c.min
         assert EPK_range_4.max < olr_4_c.max
+
+    async def test_partitioned_collection_query_with_tuples_subpartition_async(self):
+        created_db = self.database_for_test
+
+        collection_id = 'test_partitioned_collection_query_with_tuples_MH ' + str(uuid.uuid4())
+        created_collection = await created_db.create_container(
+            id=collection_id,
+            partition_key=PartitionKey(path=['/state', '/city', '/zipcode'], kind=documents.PartitionKind.MultiHash)
+        )
+
+        document_definition = {'id': 'document1',
+                               'state': 'CA',
+                               'city': 'Oxnard',
+                               'zipcode': '93033'}
+
+        created_document = await created_collection.create_item(body=document_definition)
+        assert created_document.get('id') == document_definition.get('id')
+
+        # Query using tuple instead of list
+        document_list = [document async for document in created_collection.query_items(
+            query='Select * from c', partition_key=('CA', 'Oxnard', '93033'))]
+        assert 1 == len(document_list)
+
+        await created_db.delete_container(created_collection.id)
 
     # Commenting out delete all items by pk until pipelines support it
     # async def test_delete_all_items_by_partition_key_subpartition_async(self):

@@ -18,14 +18,12 @@ from azure.core.exceptions import (
     map_error,
 )
 from azure.core.pipeline import PipelineResponse
-from azure.core.pipeline.transport import HttpResponse
-from azure.core.rest import HttpRequest
+from azure.core.rest import HttpRequest, HttpResponse
 from azure.core.tracing.decorator import distributed_trace
 from azure.core.utils import case_insensitive_dict
 
 from .. import models as _models
 from .._serialization import Serializer
-from .._vendor import _convert_request
 
 if sys.version_info >= (3, 9):
     from collections.abc import MutableMapping
@@ -237,7 +235,7 @@ class MessagesOperations:
          later than the expiry time. Default value is None.
         :type visibilitytimeout: int
         :param timeout: The The timeout parameter is expressed in seconds. For more information, see <a
-         href="https://docs.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations>Setting
+         href="https://learn.microsoft.com/rest/api/storageservices/setting-timeouts-for-queue-service-operations>Setting
          Timeouts for Queue Service Operations.</a>. Default value is None.
         :type timeout: int
         :param request_id_parameter: Provides a client-generated, opaque value with a 1 KB character
@@ -271,7 +269,6 @@ class MessagesOperations:
             headers=_headers,
             params=_params,
         )
-        _request = _convert_request(_request)
         _request.url = self._client.format_url(_request.url)
 
         _stream = False
@@ -291,7 +288,7 @@ class MessagesOperations:
         response_headers["x-ms-version"] = self._deserialize("str", response.headers.get("x-ms-version"))
         response_headers["Date"] = self._deserialize("rfc-1123", response.headers.get("Date"))
 
-        deserialized = self._deserialize("[DequeuedMessageItem]", pipeline_response)
+        deserialized = self._deserialize("[DequeuedMessageItem]", pipeline_response.http_response)
 
         if cls:
             return cls(pipeline_response, deserialized, response_headers)  # type: ignore
@@ -305,7 +302,7 @@ class MessagesOperations:
         """The Clear operation deletes all messages from the specified queue.
 
         :param timeout: The The timeout parameter is expressed in seconds. For more information, see <a
-         href="https://docs.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations>Setting
+         href="https://learn.microsoft.com/rest/api/storageservices/setting-timeouts-for-queue-service-operations>Setting
          Timeouts for Queue Service Operations.</a>. Default value is None.
         :type timeout: int
         :param request_id_parameter: Provides a client-generated, opaque value with a 1 KB character
@@ -337,7 +334,6 @@ class MessagesOperations:
             headers=_headers,
             params=_params,
         )
-        _request = _convert_request(_request)
         _request.url = self._client.format_url(_request.url)
 
         _stream = False
@@ -392,7 +388,7 @@ class MessagesOperations:
          time-to-live is 7 days. Default value is None.
         :type message_time_to_live: int
         :param timeout: The The timeout parameter is expressed in seconds. For more information, see <a
-         href="https://docs.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations>Setting
+         href="https://learn.microsoft.com/rest/api/storageservices/setting-timeouts-for-queue-service-operations>Setting
          Timeouts for Queue Service Operations.</a>. Default value is None.
         :type timeout: int
         :param request_id_parameter: Provides a client-generated, opaque value with a 1 KB character
@@ -431,7 +427,6 @@ class MessagesOperations:
             headers=_headers,
             params=_params,
         )
-        _request = _convert_request(_request)
         _request.url = self._client.format_url(_request.url)
 
         _stream = False
@@ -451,7 +446,7 @@ class MessagesOperations:
         response_headers["x-ms-version"] = self._deserialize("str", response.headers.get("x-ms-version"))
         response_headers["Date"] = self._deserialize("rfc-1123", response.headers.get("Date"))
 
-        deserialized = self._deserialize("[EnqueuedMessage]", pipeline_response)
+        deserialized = self._deserialize("[EnqueuedMessage]", pipeline_response.http_response)
 
         if cls:
             return cls(pipeline_response, deserialized, response_headers)  # type: ignore
@@ -475,7 +470,7 @@ class MessagesOperations:
          operation. Default value is None.
         :type number_of_messages: int
         :param timeout: The The timeout parameter is expressed in seconds. For more information, see <a
-         href="https://docs.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations>Setting
+         href="https://learn.microsoft.com/rest/api/storageservices/setting-timeouts-for-queue-service-operations>Setting
          Timeouts for Queue Service Operations.</a>. Default value is None.
         :type timeout: int
         :param request_id_parameter: Provides a client-generated, opaque value with a 1 KB character
@@ -510,7 +505,6 @@ class MessagesOperations:
             headers=_headers,
             params=_params,
         )
-        _request = _convert_request(_request)
         _request.url = self._client.format_url(_request.url)
 
         _stream = False
@@ -530,7 +524,7 @@ class MessagesOperations:
         response_headers["x-ms-version"] = self._deserialize("str", response.headers.get("x-ms-version"))
         response_headers["Date"] = self._deserialize("rfc-1123", response.headers.get("Date"))
 
-        deserialized = self._deserialize("[PeekedMessageItem]", pipeline_response)
+        deserialized = self._deserialize("[PeekedMessageItem]", pipeline_response.http_response)
 
         if cls:
             return cls(pipeline_response, deserialized, response_headers)  # type: ignore

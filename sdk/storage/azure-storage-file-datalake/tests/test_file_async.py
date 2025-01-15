@@ -279,7 +279,7 @@ class TestFileAsync(AsyncStorageRecordedTestCase):
         await self._setUp(datalake_storage_account_name, datalake_storage_account_key)
         # Arrange
         file_name = self._get_file_reference()
-        token_credential = self.generate_oauth_token()
+        token_credential = self.get_credential(DataLakeServiceClient, is_async=True)
 
         # Create a directory to put the file under that
         file_client = DataLakeFileClient(self.dsc.url, self.file_system_name, file_name,
@@ -760,7 +760,7 @@ class TestFileAsync(AsyncStorageRecordedTestCase):
         await file_client.flush_data(len(data))
 
         # Get user delegation key
-        token_credential = self.generate_oauth_token()
+        token_credential = self.get_credential(DataLakeServiceClient, is_async=True)
         service_client = DataLakeServiceClient(self.account_url(datalake_storage_account_name, 'dfs'), credential=token_credential)
         user_delegation_key = await service_client.get_user_delegation_key(datetime.utcnow(),
                                                                            datetime.utcnow() + timedelta(hours=1))
@@ -944,7 +944,7 @@ class TestFileAsync(AsyncStorageRecordedTestCase):
         await self._setUp(datalake_storage_account_name, datalake_storage_account_key)
 
         file_name = self._get_file_reference()
-        token_credential = self.generate_oauth_token()
+        token_credential = self.get_credential(DataLakeServiceClient, is_async=True)
 
         file_client = DataLakeFileClient(
             self.dsc.url,
@@ -1137,12 +1137,17 @@ class TestFileAsync(AsyncStorageRecordedTestCase):
             content_disposition='inline')
         expiry_time = self.get_datetime_variable(variables, 'expiry_time', datetime.utcnow() + timedelta(hours=1))
         file_client = await directory_client.create_file("newfile", metadata=metadata, content_settings=content_settings)
+
+        # Act / Assert
         await file_client.set_file_expiry("Absolute", expires_on=expiry_time)
         properties = await file_client.get_file_properties()
-
-        # Assert
         assert properties
         assert properties.expiry_time is not None
+
+        await file_client.set_file_expiry("NeverExpire")
+        properties = await file_client.get_file_properties()
+        assert properties
+        assert properties.expiry_time is None
 
         return variables
 
@@ -1490,7 +1495,7 @@ class TestFileAsync(AsyncStorageRecordedTestCase):
         file_client = await self._create_file_and_return_client()
 
         # Act
-        token_credential = self.generate_oauth_token()
+        token_credential = self.get_credential(DataLakeServiceClient, is_async=True)
         fc = DataLakeFileClient(
             self.account_url(datalake_storage_account_name, 'dfs'),
             file_client.file_system_name + '/',
@@ -1517,7 +1522,7 @@ class TestFileAsync(AsyncStorageRecordedTestCase):
         file_client = await self._create_file_and_return_client()
 
         # Act
-        token_credential = self.generate_oauth_token()
+        token_credential = self.get_credential(DataLakeServiceClient, is_async=True)
         fc = DataLakeFileClient(
             self.account_url(datalake_storage_account_name, 'dfs'),
             file_client.file_system_name + '/',

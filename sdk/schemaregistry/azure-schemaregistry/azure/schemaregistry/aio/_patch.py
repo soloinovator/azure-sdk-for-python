@@ -16,13 +16,9 @@ from typing import (
     cast,
     IO,
     Dict,
-    Mapping,
-    Optional,
-    Type,
 )
 from functools import partial
-from typing_extensions import Protocol  # type: ignore
-
+from typing_extensions import Self
 
 from azure.core.tracing.decorator_async import distributed_trace_async
 
@@ -41,13 +37,13 @@ from ._client import SchemaRegistryClient as GeneratedServiceClient
 if TYPE_CHECKING:
     from azure.core.credentials_async import AsyncTokenCredential
     from azure.core.rest import AsyncHttpResponse
-    from .._patch import MessageType, MessageContent, SchemaPropertiesDict
+    from .._patch import SchemaPropertiesDict
 
 
 ###### Wrapper Class ######
 
 
-class SchemaRegistryClient(object):
+class SchemaRegistryClient:
     """
     SchemaRegistryClient is a client for registering and retrieving schemas from the Azure Schema Registry service.
 
@@ -56,7 +52,7 @@ class SchemaRegistryClient(object):
     :param credential: To authenticate managing the entities of the SchemaRegistry namespace.
     :type credential: ~azure.core.credentials_async.AsyncTokenCredential
     :keyword str api_version: The Schema Registry service API version to use for requests.
-     Default value is "2023-07-01".
+     Default value is "2022-10".
 
     .. admonition:: Example:
 
@@ -83,11 +79,11 @@ class SchemaRegistryClient(object):
             **kwargs,
         )
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> Self:
         await self._generated_client.__aenter__()
         return self
 
-    async def __aexit__(self, *args):
+    async def __aexit__(self, *args: Any) -> None:
         await self._generated_client.__aexit__(*args)
 
     async def close(self) -> None:
@@ -136,7 +132,7 @@ class SchemaRegistryClient(object):
             await self._generated_client._register_schema(  # type: ignore # pylint:disable=protected-access
                 group_name=group_name,
                 schema_name=name,
-                content=cast(IO[Any], definition),
+                schema_content=cast(IO[Any], definition),
                 content_type=kwargs.pop("content_type", get_content_type(format)),
                 cls=partial(prepare_schema_properties_result, format),
                 **http_request_kwargs,
@@ -147,13 +143,65 @@ class SchemaRegistryClient(object):
         return SchemaProperties(**properties)
 
     @overload
-    async def get_schema(self, schema_id: str, **kwargs: Any) -> Schema: ...
+    async def get_schema(self, schema_id: str, **kwargs: Any) -> Schema:
+        """Gets a registered schema.
+
+        To get a registered schema by its unique ID, pass the `schema_id` parameter and any optional
+        keyword arguments. Azure Schema Registry guarantees that ID is unique within a namespace.
+
+        WARNING: If retrieving a schema format that is unsupported by this client version, upgrade to a client
+         version that supports the schema format. Otherwise, the content MIME type string will be returned as
+         the `format` value in the `properties` of the returned Schema.
+
+        :param str schema_id: References specific schema in registry namespace. Required if `group_name`,
+         `name`, and `version` are not provided.
+        :return: The schema stored in the registry associated with the provided arguments.
+        :rtype: ~azure.schemaregistry.Schema
+        :raises: :class:`~azure.core.exceptions.HttpResponseError`
+
+        .. admonition:: Example:
+
+            .. literalinclude:: ../samples/async_samples/sample_code_schemaregistry_async.py
+                :start-after: [START get_schema_async]
+                :end-before: [END get_schema_async]
+                :language: python
+                :dedent: 4
+                :caption: Get schema by id.
+
+        """
+        ...
 
     @overload
-    async def get_schema(self, *, group_name: str, name: str, version: int, **kwargs: Any) -> Schema: ...
+    async def get_schema(self, *, group_name: str, name: str, version: int, **kwargs: Any) -> Schema:
+        """Gets a registered schema.
+
+        To get a specific version of a schema within the specified schema group, pass in the required
+        keyword arguments `group_name`, `name`, and `version` and any optional keyword arguments.
+
+        WARNING: If retrieving a schema format that is unsupported by this client version, upgrade to a client
+         version that supports the schema format. Otherwise, the content MIME type string will be returned as
+         the `format` value in the `properties` of the returned Schema.
+
+        :keyword str group_name: Name of schema group that contains the registered schema.
+        :keyword str name: Name of schema which should be retrieved.
+        :keyword int version: Version of schema which should be retrieved.
+        :return: The schema stored in the registry associated with the provided arguments.
+        :rtype: ~azure.schemaregistry.Schema
+        :raises: :class:`~azure.core.exceptions.HttpResponseError`
+
+        .. admonition:: Example:
+
+            .. literalinclude:: ../samples/async_samples/sample_code_schemaregistry_async.py
+                :start-after: [START get_schema_by_version_async]
+                :end-before: [END get_schema_by_version_async]
+                :language: python
+                :dedent: 4
+                :caption: Get schema by version.
+        """
+        ...
 
     @distributed_trace_async
-    async def get_schema(  # pylint: disable=docstring-missing-param,docstring-should-be-keyword
+    async def get_schema(  # pylint: disable=docstring-missing-param,docstring-should-be-keyword,docstring-keyword-should-match-keyword-only
         self, *args: str, **kwargs: Any
     ) -> Schema:
         """Gets a registered schema. There are two ways to call this method:
@@ -163,6 +211,10 @@ class SchemaRegistryClient(object):
 
         2) To get a specific version of a schema within the specified schema group, pass in the required
         keyword arguments `group_name`, `name`, and `version` and any optional keyword arguments.
+
+        WARNING: If retrieving a schema format that is unsupported by this client version, upgrade to a client
+         version that supports the schema format. Otherwise, the content MIME type string will be returned as
+         the `format` value in the `properties` of the returned Schema.
 
         :param str schema_id: References specific schema in registry namespace. Required if `group_name`,
          `name`, and `version` are not provided.
@@ -208,8 +260,8 @@ class SchemaRegistryClient(object):
                 id=schema_id,
                 cls=prepare_schema_result,
                 headers={  # TODO: remove when multiple content types are supported
-                    "Accept": """application/json; serialization=Avro, application/json; \
-                        serialization=json, text/plain; charset=utf-8, text/vnd.ms.protobuf"""
+                    "Accept": """application/json; serialization=Avro, application/json; """
+                    """serialization=json, text/plain; charset=utf-8"""
                 },
                 stream=True,
                 **http_request_kwargs,
@@ -233,8 +285,8 @@ class SchemaRegistryClient(object):
                 schema_version=version,
                 cls=prepare_schema_result,
                 headers={  # TODO: remove when multiple content types are supported
-                    "Accept": """application/json; serialization=Avro, application/json; \
-                        serialization=json, text/plain; charset=utf-8, text/vnd.ms.protobuf"""
+                    "Accept": """application/json; serialization=Avro, application/json; """
+                    """serialization=json, text/plain; charset=utf-8"""
                 },
                 stream=True,
                 **http_request_kwargs,
@@ -296,199 +348,6 @@ class SchemaRegistryClient(object):
         return SchemaProperties(**properties)
 
 
-###### Encoder Protocols ######
-
-
-class SchemaEncoder(Protocol):
-    """
-    Provides the ability to encode and decode content according to a provided schema or schema ID
-     corresponding to a schema in a Schema Registry group.
-    """
-
-    @overload
-    async def encode(
-        self,
-        content: Mapping[str, Any],
-        *,
-        schema: str,
-        schema_id: None = None,
-        message_type: Type["MessageType"],
-        request_options: Optional[Dict[str, Any]] = None,
-        **kwargs: Any,
-    ) -> "MessageType":
-        """Encodes content after validating against the pre-registered schema. Encoded content and content
-         type will be passed to the provided MessageType callback to create message object.
-
-        If `message_type` is set, then additional keyword arguments for building MessageType will be passed to the
-         MessageType.from_message_content() method.
-
-        :param content: The content to be encoded.
-        :type content: mapping[str, any]
-        :keyword schema: Required. The pre-registered schema used to validate the content. `schema_id`
-         must not be passed.
-        :paramtype schema: str
-        :keyword schema_id: None.
-        :paramtype schema_id: None
-        :keyword message_type: The message class to construct the message. Must be a subtype of the
-         azure.schemaregistry.MessageType protocol.
-        :paramtype message_type: type[MessageType]
-        :keyword request_options: The keyword arguments for http requests to be passed to the client.
-        :paramtype request_options: dict[str, any] or None
-        :returns: The MessageType object with encoded content and content type.
-        :rtype: MessageType
-        """
-
-    @overload
-    async def encode(
-        self,
-        content: Mapping[str, Any],
-        *,
-        schema_id: str,
-        schema: None = None,
-        message_type: Type["MessageType"],
-        request_options: Optional[Dict[str, Any]] = None,
-        **kwargs: Any,
-    ) -> "MessageType":
-        """Encodes content after validating against the pre-registered schema corresponding to
-         the provided schema ID. Encoded content and content type will be passed to the provided
-         MessageType callback to create message object.
-
-        If `message_type` is set, then additional keyword arguments for building MessageType will be passed to the
-         MessageType.from_message_content() method.
-
-        :param content: The content to be encoded.
-        :type content: mapping[str, any]
-        :keyword schema: None.
-        :paramtype schema: None
-        :keyword schema_id: Required. The schema ID corresponding to the pre-registered schema to be used
-         for validation. `schema` must not be passed.
-        :paramtype schema_id: str
-        :keyword message_type: The message class to construct the message. Must be a subtype of the
-         azure.schemaregistry.MessageType protocol.
-        :paramtype message_type: type[MessageType]
-        :keyword request_options: The keyword arguments for http requests to be passed to the client.
-        :paramtype request_options: dict[str, any] or None
-        :returns: The MessageType object with encoded content and content type.
-        :rtype: MessageType
-        """
-
-    @overload
-    async def encode(
-        self,
-        content: Mapping[str, Any],
-        *,
-        schema: str,
-        schema_id: None = None,
-        message_type: None = None,
-        request_options: Optional[Dict[str, Any]] = None,
-        **kwargs: Any,
-    ) -> "MessageContent":
-        """Encodes content after validating against the pre-registered schema. The following dict will be returned:
-         {"content": encoded value, "content_type": schema format mime type string + schema ID}.
-
-        :param content: The content to be encoded.
-        :type content: mapping[str, any]
-        :keyword schema: Required. The pre-registered schema used to validate the content. `schema_id`
-         must not be passed.
-        :paramtype schema: str
-        :keyword schema_id: None.
-        :paramtype schema_id: None
-        :keyword message_type: None.
-        :paramtype message_type: None
-        :keyword request_options: The keyword arguments for http requests to be passed to the client.
-        :paramtype request_options: dict[str, any] or None
-        :returns: TypedDict of encoded content and content type.
-        :rtype: MessageContent
-        """
-
-    @overload
-    async def encode(
-        self,
-        content: Mapping[str, Any],
-        *,
-        schema_id: str,
-        schema: None = None,
-        message_type: None = None,
-        request_options: Optional[Dict[str, Any]] = None,
-        **kwargs: Any,
-    ) -> "MessageContent":
-        """Encodes content after validating against the pre-registered schema corresponding to
-         the provided schema ID. The following dict will be returned:
-         {"content": encoded value, "content_type": schema format mime type string + schema ID}.
-
-        :param content: The content to be encoded.
-        :type content: mapping[str, any]
-        :keyword schema: None.
-        :paramtype schema: None
-        :keyword schema_id: Required. The schema ID corresponding to the pre-registered schema to be used
-         for validation. `schema` must not be passed.
-        :paramtype schema_id: str
-        :keyword message_type: None.
-        :paramtype message_type: None
-        :keyword request_options: The keyword arguments for http requests to be passed to the client.
-        :paramtype request_options: dict[str, any] or None
-        :returns: TypedDict of encoded content and content type.
-        :rtype: MessageContent
-        """
-
-    async def encode(
-        self,
-        content: Mapping[str, Any],
-        *,
-        schema: Optional[str] = None,
-        schema_id: Optional[str] = None,
-        message_type: Optional[Type["MessageType"]] = None,
-        request_options: Optional[Dict[str, Any]] = None,
-        **kwargs: Any,
-    ) -> Union["MessageType", "MessageContent"]:
-        """Encodes content after validating against the provided pre-registered schema or the one corresponding to
-         the provided schema ID. If provided with a MessageType subtype, encoded content and content type will be
-         passed to create the message object. If not provided, the following dict will be returned:
-         {"content": encoded value, "content_type": schema format mime type string + schema ID}.
-
-        If `message_type` is set, then additional keyword arguments for building MessageType will be passed to the
-         MessageType.from_message_content() method.
-
-        :param content: The content to be encoded.
-        :type content: mapping[str, any]
-        :keyword schema: The pre-registered schema used to validate the content. Exactly one of
-         `schema` or `schema_id` must be passed.
-        :paramtype schema: str or None
-        :keyword schema_id: The schema ID corresponding to the pre-registered schema to be used
-         for validation. Exactly one of `schema` or `schema_id` must be passed.
-        :paramtype schema_id: str or None
-        :keyword message_type: The message class to construct the message. If passed, must be a subtype of the
-         azure.schemaregistry.MessageType protocol.
-        :paramtype message_type: type[MessageType] or None
-        :keyword request_options: The keyword arguments for http requests to be passed to the client.
-        :paramtype request_options: dict[str, any] or None
-        :returns: TypedDict of encoded content and content type if `message_type` is not set, otherwise the
-         constructed message object.
-        :rtype: MessageType or MessageContent
-        """
-
-    async def decode(
-        self,  # pylint: disable=unused-argument
-        message: Union["MessageType", "MessageContent"],
-        *,
-        request_options: Optional[Dict[str, Any]] = None,
-        **kwargs: Any,
-    ) -> Dict[str, Any]:
-        """
-        Returns the decoded data with the schema format specified by the `content-type` property.
-         If `validate` callable was passed to constructor, will validate content against schema retrieved
-         from the registry after decoding.
-
-        :param message: The message object which holds the content to be decoded and content type
-         containing the schema ID.
-        :type message: MessageType or MessageContent
-        :keyword request_options: The keyword arguments for http requests to be passed to the client.
-        :paramtype request_options: dict[str, any] or None
-        :returns: The decoded content.
-        :rtype: dict[str, any]
-        """
-
-
 def patch_sdk():
     """Do not remove from this file.
 
@@ -500,5 +359,4 @@ def patch_sdk():
 
 __all__: List[str] = [
     "SchemaRegistryClient",
-    "SchemaEncoder",
 ]  # Add all objects you want publicly available to users at this package level

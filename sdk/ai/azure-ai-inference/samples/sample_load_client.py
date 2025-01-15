@@ -9,12 +9,14 @@ DESCRIPTION:
     In this sample, we get a synchronous chat completions client and do one
     chat completions call.
 
+    The load_client() function only works with Serverless API or Managed Compute endpoints.
+
 USAGE:
     python sample_load_client.py
 
     Set these two environment variables before running the sample:
     1) AZURE_AI_CHAT_ENDPOINT - Your endpoint URL, in the form 
-        https://<your-deployment-name>.<your-azure-region>.inference.ai.azure.com
+        https://<your-deployment-name>.<your-azure-region>.models.ai.azure.com
         where `your-deployment-name` is your unique AI Model deployment name, and
         `your-azure-region` is the Azure region where your model is deployed.
     2) AZURE_AI_CHAT_KEY - Your model key (a 32-character string). Keep it secret.
@@ -42,11 +44,11 @@ def sample_load_client():
     # This should create a client of type `ChatCompletionsClient`
     print(f"Created client of type `{type(client).__name__}`.")
 
-    if isinstance(client, ChatCompletionsClient):
+    if type(client) is ChatCompletionsClient:
         response = client.complete(
             messages=[
-                SystemMessage(content="You are a helpful assistant."),
-                UserMessage(content="How many feet are in a mile?"),
+                SystemMessage("You are a helpful assistant."),
+                UserMessage("How many feet are in a mile?"),
             ]
         )
 

@@ -1,8 +1,8 @@
+# pylint: disable=too-many-lines
 # ------------------------------------
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 # ------------------------------------
-# pylint: disable=too-many-lines)
 """Customize generated code here.
 
 Follow our quickstart for examples: https://aka.ms/azsdk/python/dpcodegen/python/customize
@@ -36,6 +36,7 @@ from .._operations._operations import (
     build_embeddings_embed_request,
     build_image_embeddings_embed_request,
 )
+from .._patch import _get_internal_response_format
 
 if TYPE_CHECKING:
     # pylint: disable=unused-import,ungrouped-imports
@@ -45,11 +46,6 @@ if sys.version_info >= (3, 9):
     from collections.abc import MutableMapping
 else:
     from typing import MutableMapping  # type: ignore  # pylint: disable=ungrouped-imports
-
-if sys.version_info >= (3, 11):
-    from typing import Self
-else:
-    from typing_extensions import Self
 
 JSON = MutableMapping[str, Any]  # pylint: disable=unsubscriptable-object
 _Unset: Any = object()
@@ -67,9 +63,9 @@ async def load_client(
     :param endpoint: Service host. Required.
     :type endpoint: str
     :param credential: Credential used to authenticate requests to the service. Is either a
-     AzureKeyCredential type or a TokenCredential type. Required.
+     AzureKeyCredential type or a AsyncTokenCredential type. Required.
     :type credential: ~azure.core.credentials.AzureKeyCredential or
-     ~azure.core.credentials.TokenCredential
+     ~azure.core.credentials_async.AsyncTokenCredential
     :keyword api_version: The API version to use for this operation. Default value is
      "2024-05-01-preview". Note that overriding this default value may result in unsupported
      behavior.
@@ -91,20 +87,43 @@ async def load_client(
             "The AI model information is missing a value for `model type`. Cannot create an appropriate client."
         )
 
-    # TODO: Remove "completions" and "embedding" once Mistral Large and Cohere fixes their model type
-    if model_info.model_type in (_models.ModelType.CHAT, "completion"):
+    # TODO: Remove "completions", "chat-comletions" and "embedding" once Mistral Large and Cohere fixes their model type
+    if model_info.model_type in (
+        _models.ModelType.CHAT_COMPLETION,
+        "chat_completions",
+        "chat",
+        "completion",
+        "chat-completion",
+        "chat-completions",
+        "chat completion",
+        "chat completions",
+    ):
         chat_completion_client = ChatCompletionsClient(endpoint, credential, **kwargs)
         chat_completion_client._model_info = (  # pylint: disable=protected-access,attribute-defined-outside-init
             model_info
         )
         return chat_completion_client
 
-    if model_info.model_type in (_models.ModelType.EMBEDDINGS, "embedding"):
+    if model_info.model_type in (
+        _models.ModelType.EMBEDDINGS,
+        "embedding",
+        "text_embedding",
+        "text-embeddings",
+        "text embedding",
+        "text embeddings",
+    ):
         embedding_client = EmbeddingsClient(endpoint, credential, **kwargs)
         embedding_client._model_info = model_info  # pylint: disable=protected-access,attribute-defined-outside-init
         return embedding_client
 
-    if model_info.model_type == _models.ModelType.IMAGE_EMBEDDINGS:
+    if model_info.model_type in (
+        _models.ModelType.IMAGE_EMBEDDINGS,
+        "image_embedding",
+        "image-embeddings",
+        "image-embedding",
+        "image embedding",
+        "image embeddings",
+    ):
         image_embedding_client = ImageEmbeddingsClient(endpoint, credential, **kwargs)
         image_embedding_client._model_info = (  # pylint: disable=protected-access,attribute-defined-outside-init
             model_info
@@ -114,15 +133,82 @@ async def load_client(
     raise ValueError(f"No client available to support AI model type `{model_info.model_type}`")
 
 
-class ChatCompletionsClient(ChatCompletionsClientGenerated):
+class ChatCompletionsClient(ChatCompletionsClientGenerated):  # pylint: disable=too-many-instance-attributes
     """ChatCompletionsClient.
 
     :param endpoint: Service host. Required.
     :type endpoint: str
     :param credential: Credential used to authenticate requests to the service. Is either a
-     AzureKeyCredential type or a TokenCredential type. Required.
+     AzureKeyCredential type or a AsyncTokenCredential type. Required.
     :type credential: ~azure.core.credentials.AzureKeyCredential or
      ~azure.core.credentials_async.AsyncTokenCredential
+    :keyword frequency_penalty: A value that influences the probability of generated tokens
+        appearing based on their cumulative frequency in generated text.
+        Positive values will make tokens less likely to appear as their frequency increases and
+        decrease the likelihood of the model repeating the same statements verbatim.
+        Supported range is [-2, 2].
+        Default value is None.
+    :paramtype frequency_penalty: float
+    :keyword presence_penalty: A value that influences the probability of generated tokens
+        appearing based on their existing
+        presence in generated text.
+        Positive values will make tokens less likely to appear when they already exist and increase
+        the model's likelihood to output new topics.
+        Supported range is [-2, 2].
+        Default value is None.
+    :paramtype presence_penalty: float
+    :keyword temperature: The sampling temperature to use that controls the apparent creativity of
+        generated completions.
+        Higher values will make output more random while lower values will make results more focused
+        and deterministic.
+        It is not recommended to modify temperature and top_p for the same completions request as the
+        interaction of these two settings is difficult to predict.
+        Supported range is [0, 1].
+        Default value is None.
+    :paramtype temperature: float
+    :keyword top_p: An alternative to sampling with temperature called nucleus sampling. This value
+        causes the
+        model to consider the results of tokens with the provided probability mass. As an example, a
+        value of 0.15 will cause only the tokens comprising the top 15% of probability mass to be
+        considered.
+        It is not recommended to modify temperature and top_p for the same completions request as the
+        interaction of these two settings is difficult to predict.
+        Supported range is [0, 1].
+        Default value is None.
+    :paramtype top_p: float
+    :keyword max_tokens: The maximum number of tokens to generate. Default value is None.
+    :paramtype max_tokens: int
+    :keyword response_format: The format that the AI model must output. AI chat completions models typically output
+        unformatted text by default. This is equivalent to setting "text" as the response_format.
+        To output JSON format, without adhering to any schema, set to "json_object".
+        To output JSON format adhering to a provided schema, set this to an object of the class
+        ~azure.ai.inference.models.JsonSchemaFormat. Default value is None.
+    :paramtype response_format: Union[Literal['text', 'json_object'], ~azure.ai.inference.models.JsonSchemaFormat]
+    :keyword stop: A collection of textual sequences that will end completions generation. Default
+        value is None.
+    :paramtype stop: list[str]
+    :keyword tools: The available tool definitions that the chat completions request can use,
+        including caller-defined functions. Default value is None.
+    :paramtype tools: list[~azure.ai.inference.models.ChatCompletionsToolDefinition]
+    :keyword tool_choice: If specified, the model will configure which of the provided tools it can
+        use for the chat completions response. Is either a Union[str,
+        "_models.ChatCompletionsToolChoicePreset"] type or a ChatCompletionsNamedToolChoice type.
+        Default value is None.
+    :paramtype tool_choice: str or ~azure.ai.inference.models.ChatCompletionsToolChoicePreset or
+        ~azure.ai.inference.models.ChatCompletionsNamedToolChoice
+    :keyword seed: If specified, the system will make a best effort to sample deterministically
+        such that repeated requests with the
+        same seed and parameters should return the same result. Determinism is not guaranteed.
+        Default value is None.
+    :paramtype seed: int
+    :keyword model: ID of the specific AI model to use, if more than one model is available on the
+        endpoint. Default value is None.
+    :paramtype model: str
+    :keyword model_extras: Additional, model-specific parameters that are not in the
+        standard request payload. They will be added as-is to the root of the JSON in the request body.
+        How the service handles these extra parameters depends on the value of the
+        ``extra-parameters`` request header. Default value is None.
+    :paramtype model_extras: dict[str, Any]
     :keyword api_version: The API version to use for this operation. Default value is
      "2024-05-01-preview". Note that overriding this default value may result in unsupported
      behavior.
@@ -130,32 +216,79 @@ class ChatCompletionsClient(ChatCompletionsClientGenerated):
     """
 
     def __init__(
-        self, endpoint: str, credential: Union[AzureKeyCredential, "AsyncTokenCredential"], **kwargs: Any
+        self,
+        endpoint: str,
+        credential: Union[AzureKeyCredential, "AsyncTokenCredential"],
+        *,
+        frequency_penalty: Optional[float] = None,
+        presence_penalty: Optional[float] = None,
+        temperature: Optional[float] = None,
+        top_p: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        response_format: Optional[Union[Literal["text", "json_object"], _models.JsonSchemaFormat]] = None,
+        stop: Optional[List[str]] = None,
+        tools: Optional[List[_models.ChatCompletionsToolDefinition]] = None,
+        tool_choice: Optional[
+            Union[str, _models.ChatCompletionsToolChoicePreset, _models.ChatCompletionsNamedToolChoice]
+        ] = None,
+        seed: Optional[int] = None,
+        model: Optional[str] = None,
+        model_extras: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> None:
+
         self._model_info: Optional[_models.ModelInfo] = None
-        super().__init__(endpoint=endpoint, credential=credential, **kwargs)
+
+        # Store default chat completions settings, to be applied in all future service calls
+        # unless overridden by arguments in the `complete` method.
+        self._frequency_penalty = frequency_penalty
+        self._presence_penalty = presence_penalty
+        self._temperature = temperature
+        self._top_p = top_p
+        self._max_tokens = max_tokens
+        self._internal_response_format = _get_internal_response_format(response_format)
+        self._stop = stop
+        self._tools = tools
+        self._tool_choice = tool_choice
+        self._seed = seed
+        self._model = model
+        self._model_extras = model_extras
+
+        # For Key auth, we need to send these two auth HTTP request headers simultaneously:
+        # 1. "Authorization: Bearer <key>"
+        # 2. "api-key: <key>"
+        # This is because Serverless API, Managed Compute and GitHub endpoints support the first header,
+        # and Azure OpenAI and the new Unified Inference endpoints support the second header.
+        # The first header will be taken care of by auto-generated code.
+        # The second one is added here.
+        if isinstance(credential, AzureKeyCredential):
+            headers = kwargs.pop("headers", {})
+            if "api-key" not in headers:
+                headers["api-key"] = credential.key
+            kwargs["headers"] = headers
+
+        super().__init__(endpoint, credential, **kwargs)
 
     @overload
     async def complete(
         self,
         *,
         messages: List[_models.ChatRequestMessage],
-        content_type: str = "application/json",
-        model_extras: Optional[Dict[str, Any]] = None,
+        stream: Literal[False] = False,
         frequency_penalty: Optional[float] = None,
         presence_penalty: Optional[float] = None,
         temperature: Optional[float] = None,
         top_p: Optional[float] = None,
         max_tokens: Optional[int] = None,
-        response_format: Optional[Union[str, _models.ChatCompletionsResponseFormat]] = None,
+        response_format: Optional[Union[Literal["text", "json_object"], _models.JsonSchemaFormat]] = None,
         stop: Optional[List[str]] = None,
-        stream: Literal[False] = False,
         tools: Optional[List[_models.ChatCompletionsToolDefinition]] = None,
         tool_choice: Optional[
-            Union[str, _models.ChatCompletionsToolSelectionPreset, _models.ChatCompletionsNamedToolSelection]
+            Union[str, _models.ChatCompletionsToolChoicePreset, _models.ChatCompletionsNamedToolChoice]
         ] = None,
         seed: Optional[int] = None,
         model: Optional[str] = None,
+        model_extras: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> _models.ChatCompletions: ...
 
@@ -164,22 +297,21 @@ class ChatCompletionsClient(ChatCompletionsClientGenerated):
         self,
         *,
         messages: List[_models.ChatRequestMessage],
-        content_type: str = "application/json",
-        model_extras: Optional[Dict[str, Any]] = None,
+        stream: Literal[True],
         frequency_penalty: Optional[float] = None,
         presence_penalty: Optional[float] = None,
         temperature: Optional[float] = None,
         top_p: Optional[float] = None,
         max_tokens: Optional[int] = None,
-        response_format: Optional[Union[str, _models.ChatCompletionsResponseFormat]] = None,
+        response_format: Optional[Union[Literal["text", "json_object"], _models.JsonSchemaFormat]] = None,
         stop: Optional[List[str]] = None,
-        stream: Literal[True],
         tools: Optional[List[_models.ChatCompletionsToolDefinition]] = None,
         tool_choice: Optional[
-            Union[str, _models.ChatCompletionsToolSelectionPreset, _models.ChatCompletionsNamedToolSelection]
+            Union[str, _models.ChatCompletionsToolChoicePreset, _models.ChatCompletionsNamedToolChoice]
         ] = None,
         seed: Optional[int] = None,
         model: Optional[str] = None,
+        model_extras: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> AsyncIterable[_models.StreamingChatCompletionsUpdate]: ...
 
@@ -188,22 +320,21 @@ class ChatCompletionsClient(ChatCompletionsClientGenerated):
         self,
         *,
         messages: List[_models.ChatRequestMessage],
-        content_type: str = "application/json",
-        model_extras: Optional[Dict[str, Any]] = None,
+        stream: Optional[bool] = None,
         frequency_penalty: Optional[float] = None,
         presence_penalty: Optional[float] = None,
         temperature: Optional[float] = None,
         top_p: Optional[float] = None,
         max_tokens: Optional[int] = None,
-        response_format: Optional[Union[str, _models.ChatCompletionsResponseFormat]] = None,
+        response_format: Optional[Union[Literal["text", "json_object"], _models.JsonSchemaFormat]] = None,
         stop: Optional[List[str]] = None,
-        stream: Optional[bool] = None,
         tools: Optional[List[_models.ChatCompletionsToolDefinition]] = None,
         tool_choice: Optional[
-            Union[str, _models.ChatCompletionsToolSelectionPreset, _models.ChatCompletionsNamedToolSelection]
+            Union[str, _models.ChatCompletionsToolChoicePreset, _models.ChatCompletionsNamedToolChoice]
         ] = None,
         seed: Optional[int] = None,
         model: Optional[str] = None,
+        model_extras: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Union[AsyncIterable[_models.StreamingChatCompletionsUpdate], _models.ChatCompletions]:
         # pylint: disable=line-too-long
@@ -222,14 +353,10 @@ class ChatCompletionsClient(ChatCompletionsClientGenerated):
          the behavior of the assistant, followed by alternating messages between the User and
          Assistant roles. Required.
         :paramtype messages: list[~azure.ai.inference.models.ChatRequestMessage]
-        :keyword content_type: Body Parameter content-type. Content type parameter for JSON body.
-         Default value is "application/json".
-        :paramtype content_type: str
-        :keyword model_extras: Additional, model-specific parameters that are not in the
-         standard request payload. They will be added as-is to the root of the JSON in the request body.
-         How the service handles these extra parameters depends on the value of the
-         ``unknown-parameters`` request header. Default value is None.
-        :paramtype model_extras: dict[str, Any]
+        :keyword stream: A value indicating whether chat completions should be streamed for this request.
+         Default value is False. If streaming is enabled, the response will be a StreamingChatCompletions.
+         Otherwise the response will be a ChatCompletions.
+        :paramtype stream: bool
         :keyword frequency_penalty: A value that influences the probability of generated tokens
          appearing based on their cumulative frequency in generated text.
          Positive values will make tokens less likely to appear as their frequency increases and
@@ -266,25 +393,24 @@ class ChatCompletionsClient(ChatCompletionsClientGenerated):
         :paramtype top_p: float
         :keyword max_tokens: The maximum number of tokens to generate. Default value is None.
         :paramtype max_tokens: int
-        :keyword response_format: An object specifying the format that the model must output. Used to
-         enable JSON mode. Known values are: "text" and "json_object". Default value is None.
-        :paramtype response_format: str or ~azure.ai.inference.models.ChatCompletionsResponseFormat
+        :keyword response_format: The format that the AI model must output. AI chat completions models typically output
+         unformatted text by default. This is equivalent to setting "text" as the response_format.
+         To output JSON format, without adhering to any schema, set to "json_object".
+         To output JSON format adhering to a provided schema, set this to an object of the class
+         ~azure.ai.inference.models.JsonSchemaFormat. Default value is None.
+        :paramtype response_format: Union[Literal['text', 'json_object'], ~azure.ai.inference.models.JsonSchemaFormat]
         :keyword stop: A collection of textual sequences that will end completions generation. Default
          value is None.
         :paramtype stop: list[str]
-        :keyword stream: A value indicating whether chat completions should be streamed for this request.
-         Default value is False. If streaming is enabled, the response will be a StreamingChatCompletions.
-         Otherwise the response will be a ChatCompletions.
-        :paramtype stream: bool
         :keyword tools: The available tool definitions that the chat completions request can use,
          including caller-defined functions. Default value is None.
         :paramtype tools: list[~azure.ai.inference.models.ChatCompletionsToolDefinition]
         :keyword tool_choice: If specified, the model will configure which of the provided tools it can
          use for the chat completions response. Is either a Union[str,
-         "_models.ChatCompletionsToolSelectionPreset"] type or a ChatCompletionsNamedToolSelection type.
+         "_models.ChatCompletionsToolChoicePreset"] type or a ChatCompletionsNamedToolChoice type.
          Default value is None.
-        :paramtype tool_choice: str or ~azure.ai.inference.models.ChatCompletionsToolSelectionPreset or
-         ~azure.ai.inference.models.ChatCompletionsNamedToolSelection
+        :paramtype tool_choice: str or ~azure.ai.inference.models.ChatCompletionsToolChoicePreset or
+         ~azure.ai.inference.models.ChatCompletionsNamedToolChoice
         :keyword seed: If specified, the system will make a best effort to sample deterministically
          such that repeated requests with the
          same seed and parameters should return the same result. Determinism is not guaranteed.
@@ -293,6 +419,11 @@ class ChatCompletionsClient(ChatCompletionsClientGenerated):
         :keyword model: ID of the specific AI model to use, if more than one model is available on the
          endpoint. Default value is None.
         :paramtype model: str
+        :keyword model_extras: Additional, model-specific parameters that are not in the
+         standard request payload. They will be added as-is to the root of the JSON in the request body.
+         How the service handles these extra parameters depends on the value of the
+         ``extra-parameters`` request header. Default value is None.
+        :paramtype model_extras: dict[str, Any]
         :return: ChatCompletions for non-streaming, or AsyncIterable[StreamingChatCompletionsUpdate] for streaming.
         :rtype: ~azure.ai.inference.models.ChatCompletions or ~azure.ai.inference.models.AsyncStreamingChatCompletions
         :raises ~azure.core.exceptions.HttpResponseError:
@@ -345,27 +476,27 @@ class ChatCompletionsClient(ChatCompletionsClientGenerated):
         :raises ~azure.core.exceptions.HttpResponseError:
         """
 
-    @distributed_trace_async
+    # pylint:disable=client-method-missing-tracing-decorator-async
     async def complete(
         self,
         body: Union[JSON, IO[bytes]] = _Unset,
         *,
         messages: List[_models.ChatRequestMessage] = _Unset,
-        model_extras: Optional[Dict[str, Any]] = None,
+        stream: Optional[bool] = None,
         frequency_penalty: Optional[float] = None,
         presence_penalty: Optional[float] = None,
         temperature: Optional[float] = None,
         top_p: Optional[float] = None,
         max_tokens: Optional[int] = None,
-        response_format: Optional[Union[str, _models.ChatCompletionsResponseFormat]] = None,
+        response_format: Optional[Union[Literal["text", "json_object"], _models.JsonSchemaFormat]] = None,
         stop: Optional[List[str]] = None,
-        stream: Optional[bool] = None,
         tools: Optional[List[_models.ChatCompletionsToolDefinition]] = None,
         tool_choice: Optional[
-            Union[str, _models.ChatCompletionsToolSelectionPreset, _models.ChatCompletionsNamedToolSelection]
+            Union[str, _models.ChatCompletionsToolChoicePreset, _models.ChatCompletionsNamedToolChoice]
         ] = None,
         seed: Optional[int] = None,
         model: Optional[str] = None,
+        model_extras: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Union[AsyncIterable[_models.StreamingChatCompletionsUpdate], _models.ChatCompletions]:
         # pylint: disable=line-too-long
@@ -385,11 +516,10 @@ class ChatCompletionsClient(ChatCompletionsClientGenerated):
          the behavior of the assistant, followed by alternating messages between the User and
          Assistant roles. Required.
         :paramtype messages: list[~azure.ai.inference.models.ChatRequestMessage]
-        :keyword model_extras: Additional, model-specific parameters that are not in the
-         standard request payload. They will be added as-is to the root of the JSON in the request body.
-         How the service handles these extra parameters depends on the value of the
-         ``unknown-parameters`` request header. Default value is None.
-        :paramtype model_extras: dict[str, Any]
+        :keyword stream: A value indicating whether chat completions should be streamed for this request.
+         Default value is False. If streaming is enabled, the response will be a StreamingChatCompletions.
+         Otherwise the response will be a ChatCompletions.
+        :paramtype stream: bool
         :keyword frequency_penalty: A value that influences the probability of generated tokens
          appearing based on their cumulative frequency in generated text.
          Positive values will make tokens less likely to appear as their frequency increases and
@@ -426,25 +556,24 @@ class ChatCompletionsClient(ChatCompletionsClientGenerated):
         :paramtype top_p: float
         :keyword max_tokens: The maximum number of tokens to generate. Default value is None.
         :paramtype max_tokens: int
-        :keyword response_format: An object specifying the format that the model must output. Used to
-         enable JSON mode. Known values are: "text" and "json_object". Default value is None.
-        :paramtype response_format: str or ~azure.ai.inference.models.ChatCompletionsResponseFormat
+        :keyword response_format: The format that the AI model must output. AI chat completions models typically output
+         unformatted text by default. This is equivalent to setting "text" as the response_format.
+         To output JSON format, without adhering to any schema, set to "json_object".
+         To output JSON format adhering to a provided schema, set this to an object of the class
+         ~azure.ai.inference.models.JsonSchemaFormat. Default value is None.
+        :paramtype response_format: Union[Literal['text', 'json_object'], ~azure.ai.inference.models.JsonSchemaFormat]
         :keyword stop: A collection of textual sequences that will end completions generation. Default
          value is None.
         :paramtype stop: list[str]
-        :keyword stream: A value indicating whether chat completions should be streamed for this request.
-         Default value is False. If streaming is enabled, the response will be a StreamingChatCompletions.
-         Otherwise the response will be a ChatCompletions.
-        :paramtype stream: bool
         :keyword tools: The available tool definitions that the chat completions request can use,
          including caller-defined functions. Default value is None.
         :paramtype tools: list[~azure.ai.inference.models.ChatCompletionsToolDefinition]
         :keyword tool_choice: If specified, the model will configure which of the provided tools it can
          use for the chat completions response. Is either a Union[str,
-         "_models.ChatCompletionsToolSelectionPreset"] type or a ChatCompletionsNamedToolSelection type.
+         "_models.ChatCompletionsToolChoicePreset"] type or a ChatCompletionsNamedToolChoice type.
          Default value is None.
-        :paramtype tool_choice: str or ~azure.ai.inference.models.ChatCompletionsToolSelectionPreset or
-         ~azure.ai.inference.models.ChatCompletionsNamedToolSelection
+        :paramtype tool_choice: str or ~azure.ai.inference.models.ChatCompletionsToolChoicePreset or
+         ~azure.ai.inference.models.ChatCompletionsNamedToolChoice
         :keyword seed: If specified, the system will make a best effort to sample deterministically
          such that repeated requests with the
          same seed and parameters should return the same result. Determinism is not guaranteed.
@@ -453,6 +582,11 @@ class ChatCompletionsClient(ChatCompletionsClientGenerated):
         :keyword model: ID of the specific AI model to use, if more than one model is available on the
          endpoint. Default value is None.
         :paramtype model: str
+        :keyword model_extras: Additional, model-specific parameters that are not in the
+         standard request payload. They will be added as-is to the root of the JSON in the request body.
+         How the service handles these extra parameters depends on the value of the
+         ``extra-parameters`` request header. Default value is None.
+        :paramtype model_extras: dict[str, Any]
         :return: ChatCompletions for non-streaming, or AsyncIterable[StreamingChatCompletionsUpdate] for streaming.
         :rtype: ~azure.ai.inference.models.ChatCompletions or ~azure.ai.inference.models.AsyncStreamingChatCompletions
         :raises ~azure.core.exceptions.HttpResponseError:
@@ -467,31 +601,38 @@ class ChatCompletionsClient(ChatCompletionsClientGenerated):
 
         _headers = case_insensitive_dict(kwargs.pop("headers", {}) or {})
         _params = kwargs.pop("params", {}) or {}
-        _unknown_params: Union[_models._enums.UnknownParams, None] = None
+        _extra_parameters: Union[_models._enums.ExtraParameters, None] = None
 
         content_type: Optional[str] = kwargs.pop("content_type", _headers.pop("Content-Type", None))
+
+        internal_response_format = _get_internal_response_format(response_format)
 
         if body is _Unset:
             if messages is _Unset:
                 raise TypeError("missing required argument: messages")
             body = {
-                "frequency_penalty": frequency_penalty,
-                "max_tokens": max_tokens,
                 "messages": messages,
-                "model": model,
-                "presence_penalty": presence_penalty,
-                "response_format": response_format,
-                "seed": seed,
-                "stop": stop,
                 "stream": stream,
-                "temperature": temperature,
-                "tool_choice": tool_choice,
-                "tools": tools,
-                "top_p": top_p,
+                "frequency_penalty": frequency_penalty if frequency_penalty is not None else self._frequency_penalty,
+                "max_tokens": max_tokens if max_tokens is not None else self._max_tokens,
+                "model": model if model is not None else self._model,
+                "presence_penalty": presence_penalty if presence_penalty is not None else self._presence_penalty,
+                "response_format": (
+                    internal_response_format if internal_response_format is not None else self._internal_response_format
+                ),
+                "seed": seed if seed is not None else self._seed,
+                "stop": stop if stop is not None else self._stop,
+                "temperature": temperature if temperature is not None else self._temperature,
+                "tool_choice": tool_choice if tool_choice is not None else self._tool_choice,
+                "tools": tools if tools is not None else self._tools,
+                "top_p": top_p if top_p is not None else self._top_p,
             }
             if model_extras is not None and bool(model_extras):
                 body.update(model_extras)
-                _unknown_params = _models._enums.UnknownParams.PASS_THROUGH  # pylint: disable=protected-access
+                _extra_parameters = _models._enums.ExtraParameters.PASS_THROUGH  # pylint: disable=protected-access
+            elif self._model_extras is not None and bool(self._model_extras):
+                body.update(self._model_extras)
+                _extra_parameters = _models._enums.ExtraParameters.PASS_THROUGH  # pylint: disable=protected-access
             body = {k: v for k, v in body.items() if v is not None}
         elif isinstance(body, dict) and "stream" in body and isinstance(body["stream"], bool):
             stream = body["stream"]
@@ -503,7 +644,7 @@ class ChatCompletionsClient(ChatCompletionsClientGenerated):
             _content = json.dumps(body, cls=SdkJSONEncoder, exclude_readonly=True)  # type: ignore
 
         _request = build_chat_completions_complete_request(
-            unknown_params=_unknown_params,
+            extra_params=_extra_parameters,
             content_type=content_type,
             api_version=self._config.api_version,
             content=_content,
@@ -531,12 +672,15 @@ class ChatCompletionsClient(ChatCompletionsClientGenerated):
         if _stream:
             return _models.AsyncStreamingChatCompletions(response)
 
-        return _deserialize(_models.ChatCompletions, response.json())  # pylint: disable=protected-access
+        return _deserialize(_models._patch.ChatCompletions, response.json())  # pylint: disable=protected-access
 
     @distributed_trace_async
     async def get_model_info(self, **kwargs: Any) -> _models.ModelInfo:
         # pylint: disable=line-too-long
         """Returns information about the AI model.
+        The method makes a REST API call to the ``/info`` route on the given endpoint.
+        This method will only work when using Serverless API or Managed Compute endpoint.
+        It will not work for GitHub Models endpoint or Azure OpenAI endpoint.
 
         :return: ModelInfo. The ModelInfo is compatible with MutableMapping
         :rtype: ~azure.ai.inference.models.ModelInfo
@@ -550,12 +694,6 @@ class ChatCompletionsClient(ChatCompletionsClientGenerated):
         # pylint: disable=client-method-name-no-double-underscore
         return super().__str__() + f"\n{self._model_info}" if self._model_info else super().__str__()
 
-    # Remove this once https://github.com/Azure/autorest.python/issues/2619 is fixed,
-    # and you see the equivalent auto-generated method in _client.py return "Self"
-    async def __aenter__(self) -> Self:
-        await self._client.__aenter__()
-        return self
-
 
 class EmbeddingsClient(EmbeddingsClientGenerated):
     """EmbeddingsClient.
@@ -563,9 +701,27 @@ class EmbeddingsClient(EmbeddingsClientGenerated):
     :param endpoint: Service host. Required.
     :type endpoint: str
     :param credential: Credential used to authenticate requests to the service. Is either a
-     AzureKeyCredential type or a TokenCredential type. Required.
+     AzureKeyCredential type or a AsyncTokenCredential type. Required.
     :type credential: ~azure.core.credentials.AzureKeyCredential or
      ~azure.core.credentials_async.AsyncTokenCredential
+    :keyword dimensions: Optional. The number of dimensions the resulting output embeddings should
+        have. Default value is None.
+    :paramtype dimensions: int
+    :keyword encoding_format: Optional. The desired format for the returned embeddings.
+        Known values are:
+        "base64", "binary", "float", "int8", "ubinary", and "uint8". Default value is None.
+    :paramtype encoding_format: str or ~azure.ai.inference.models.EmbeddingEncodingFormat
+    :keyword input_type: Optional. The type of the input. Known values are:
+        "text", "query", and "document". Default value is None.
+    :paramtype input_type: str or ~azure.ai.inference.models.EmbeddingInputType
+    :keyword model: ID of the specific AI model to use, if more than one model is available on the
+        endpoint. Default value is None.
+    :paramtype model: str
+    :keyword model_extras: Additional, model-specific parameters that are not in the
+        standard request payload. They will be added as-is to the root of the JSON in the request body.
+        How the service handles these extra parameters depends on the value of the
+        ``extra-parameters`` request header. Default value is None.
+    :paramtype model_extras: dict[str, Any]
     :keyword api_version: The API version to use for this operation. Default value is
      "2024-05-01-preview". Note that overriding this default value may result in unsupported
      behavior.
@@ -573,52 +729,80 @@ class EmbeddingsClient(EmbeddingsClientGenerated):
     """
 
     def __init__(
-        self, endpoint: str, credential: Union[AzureKeyCredential, "AsyncTokenCredential"], **kwargs: Any
+        self,
+        endpoint: str,
+        credential: Union[AzureKeyCredential, "AsyncTokenCredential"],
+        *,
+        dimensions: Optional[int] = None,
+        encoding_format: Optional[Union[str, _models.EmbeddingEncodingFormat]] = None,
+        input_type: Optional[Union[str, _models.EmbeddingInputType]] = None,
+        model: Optional[str] = None,
+        model_extras: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> None:
+
         self._model_info: Optional[_models.ModelInfo] = None
-        super().__init__(endpoint=endpoint, credential=credential, **kwargs)
+
+        # Store default embeddings settings, to be applied in all future service calls
+        # unless overridden by arguments in the `embed` method.
+        self._dimensions = dimensions
+        self._encoding_format = encoding_format
+        self._input_type = input_type
+        self._model = model
+        self._model_extras = model_extras
+
+        # For Key auth, we need to send these two auth HTTP request headers simultaneously:
+        # 1. "Authorization: Bearer <key>"
+        # 2. "api-key: <key>"
+        # This is because Serverless API, Managed Compute and GitHub endpoints support the first header,
+        # and Azure OpenAI and the new Unified Inference endpoints support the second header.
+        # The first header will be taken care of by auto-generated code.
+        # The second one is added here.
+        if isinstance(credential, AzureKeyCredential):
+            headers = kwargs.pop("headers", {})
+            if "api-key" not in headers:
+                headers["api-key"] = credential.key
+            kwargs["headers"] = headers
+
+        super().__init__(endpoint, credential, **kwargs)
 
     @overload
     async def embed(
         self,
         *,
-        model_extras: Optional[Dict[str, Any]] = None,
         input: List[str],
-        content_type: str = "application/json",
         dimensions: Optional[int] = None,
         encoding_format: Optional[Union[str, _models.EmbeddingEncodingFormat]] = None,
         input_type: Optional[Union[str, _models.EmbeddingInputType]] = None,
+        model: Optional[str] = None,
+        model_extras: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> _models.EmbeddingsResult:
         """Return the embedding vectors for given text prompts.
         The method makes a REST API call to the `/embeddings` route on the given endpoint.
 
-        :keyword model_extras: Additional, model-specific parameters that are not in the
-         standard request payload. They will be added as-is to the root of the JSON in the request body.
-         How the service handles these extra parameters depends on the value of the
-         ``unknown-parameters`` request header. Default value is None.
-        :paramtype model_extras: dict[str, Any]
         :keyword input: Input text to embed, encoded as a string or array of tokens.
          To embed multiple inputs in a single request, pass an array
          of strings or array of token arrays. Required.
         :paramtype input: list[str]
-        :keyword content_type: Body Parameter content-type. Content type parameter for JSON body.
-         Default value is "application/json".
-        :paramtype content_type: str
         :keyword dimensions: Optional. The number of dimensions the resulting output embeddings should
-         have.
-         Passing null causes the model to use its default value.
-         Returns a 422 error if the model doesn't support the value or parameter. Default value is
-         None.
+         have. Default value is None.
         :paramtype dimensions: int
         :keyword encoding_format: Optional. The desired format for the returned embeddings.
          Known values are:
          "base64", "binary", "float", "int8", "ubinary", and "uint8". Default value is None.
         :paramtype encoding_format: str or ~azure.ai.inference.models.EmbeddingEncodingFormat
-        :keyword input_type: Optional. The type of the input.
-         Returns a 422 error if the model doesn't support the value or parameter. Known values are:
+        :keyword input_type: Optional. The type of the input. Known values are:
          "text", "query", and "document". Default value is None.
         :paramtype input_type: str or ~azure.ai.inference.models.EmbeddingInputType
+        :keyword model: ID of the specific AI model to use, if more than one model is available on the
+         endpoint. Default value is None.
+        :paramtype model: str
+        :keyword model_extras: Additional, model-specific parameters that are not in the
+         standard request payload. They will be added as-is to the root of the JSON in the request body.
+         How the service handles these extra parameters depends on the value of the
+         ``extra-parameters`` request header. Default value is None.
+        :paramtype model_extras: dict[str, Any]
         :return: EmbeddingsResult. The EmbeddingsResult is compatible with MutableMapping
         :rtype: ~azure.ai.inference.models.EmbeddingsResult
         :raises ~azure.core.exceptions.HttpResponseError:
@@ -672,11 +856,12 @@ class EmbeddingsClient(EmbeddingsClientGenerated):
         self,
         body: Union[JSON, IO[bytes]] = _Unset,
         *,
-        model_extras: Optional[Dict[str, Any]] = None,
         input: List[str] = _Unset,
         dimensions: Optional[int] = None,
         encoding_format: Optional[Union[str, _models.EmbeddingEncodingFormat]] = None,
         input_type: Optional[Union[str, _models.EmbeddingInputType]] = None,
+        model: Optional[str] = None,
+        model_extras: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> _models.EmbeddingsResult:
         # pylint: disable=line-too-long
@@ -686,29 +871,28 @@ class EmbeddingsClient(EmbeddingsClientGenerated):
         :param body: Is either a MutableMapping[str, Any] type (like a dictionary) or a IO[bytes] type
          that specifies the full request payload. Required.
         :type body: JSON or IO[bytes]
-        :keyword model_extras: Additional, model-specific parameters that are not in the
-         standard request payload. They will be added as-is to the root of the JSON in the request body.
-         How the service handles these extra parameters depends on the value of the
-         ``unknown-parameters`` request header. Default value is None.
-        :paramtype model_extras: dict[str, Any]
         :keyword input: Input text to embed, encoded as a string or array of tokens.
          To embed multiple inputs in a single request, pass an array
          of strings or array of token arrays. Required.
         :paramtype input: list[str]
         :keyword dimensions: Optional. The number of dimensions the resulting output embeddings should
-         have.
-         Passing null causes the model to use its default value.
-         Returns a 422 error if the model doesn't support the value or parameter. Default value is
-         None.
+         have. Default value is None.
         :paramtype dimensions: int
         :keyword encoding_format: Optional. The desired format for the returned embeddings.
          Known values are:
          "base64", "binary", "float", "int8", "ubinary", and "uint8". Default value is None.
         :paramtype encoding_format: str or ~azure.ai.inference.models.EmbeddingEncodingFormat
-        :keyword input_type: Optional. The type of the input.
-         Returns a 422 error if the model doesn't support the value or parameter. Known values are:
+        :keyword input_type: Optional. The type of the input. Known values are:
          "text", "query", and "document". Default value is None.
         :paramtype input_type: str or ~azure.ai.inference.models.EmbeddingInputType
+        :keyword model: ID of the specific AI model to use, if more than one model is available on the
+         endpoint. Default value is None.
+        :paramtype model: str
+        :keyword model_extras: Additional, model-specific parameters that are not in the
+         standard request payload. They will be added as-is to the root of the JSON in the request body.
+         How the service handles these extra parameters depends on the value of the
+         ``extra-parameters`` request header. Default value is None.
+        :paramtype model_extras: dict[str, Any]
         :return: EmbeddingsResult. The EmbeddingsResult is compatible with MutableMapping
         :rtype: ~azure.ai.inference.models.EmbeddingsResult
         :raises ~azure.core.exceptions.HttpResponseError:
@@ -723,7 +907,7 @@ class EmbeddingsClient(EmbeddingsClientGenerated):
 
         _headers = case_insensitive_dict(kwargs.pop("headers", {}) or {})
         _params = kwargs.pop("params", {}) or {}
-        _unknown_params: Union[_models._enums.UnknownParams, None] = None
+        _extra_parameters: Union[_models._enums.ExtraParameters, None] = None
 
         content_type: Optional[str] = kwargs.pop("content_type", _headers.pop("Content-Type", None))
 
@@ -731,14 +915,18 @@ class EmbeddingsClient(EmbeddingsClientGenerated):
             if input is _Unset:
                 raise TypeError("missing required argument: input")
             body = {
-                "dimensions": dimensions,
-                "encoding_format": encoding_format,
                 "input": input,
-                "input_type": input_type,
+                "dimensions": dimensions if dimensions is not None else self._dimensions,
+                "encoding_format": encoding_format if encoding_format is not None else self._encoding_format,
+                "input_type": input_type if input_type is not None else self._input_type,
+                "model": model if model is not None else self._model,
             }
             if model_extras is not None and bool(model_extras):
                 body.update(model_extras)
-                _unknown_params = _models._enums.UnknownParams.PASS_THROUGH  # pylint: disable=protected-access
+                _extra_parameters = _models._enums.ExtraParameters.PASS_THROUGH  # pylint: disable=protected-access
+            elif self._model_extras is not None and bool(self._model_extras):
+                body.update(self._model_extras)
+                _extra_parameters = _models._enums.ExtraParameters.PASS_THROUGH  # pylint: disable=protected-access
             body = {k: v for k, v in body.items() if v is not None}
         content_type = content_type or "application/json"
         _content = None
@@ -748,7 +936,7 @@ class EmbeddingsClient(EmbeddingsClientGenerated):
             _content = json.dumps(body, cls=SdkJSONEncoder, exclude_readonly=True)  # type: ignore
 
         _request = build_embeddings_embed_request(
-            unknown_params=_unknown_params,
+            extra_params=_extra_parameters,
             content_type=content_type,
             api_version=self._config.api_version,
             content=_content,
@@ -776,7 +964,9 @@ class EmbeddingsClient(EmbeddingsClientGenerated):
         if _stream:
             deserialized = response.iter_bytes()
         else:
-            deserialized = _deserialize(_models.EmbeddingsResult, response.json())
+            deserialized = _deserialize(
+                _models._patch.EmbeddingsResult, response.json()  # pylint: disable=protected-access
+            )
 
         return deserialized  # type: ignore
 
@@ -784,6 +974,9 @@ class EmbeddingsClient(EmbeddingsClientGenerated):
     async def get_model_info(self, **kwargs: Any) -> _models.ModelInfo:
         # pylint: disable=line-too-long
         """Returns information about the AI model.
+        The method makes a REST API call to the ``/info`` route on the given endpoint.
+        This method will only work when using Serverless API or Managed Compute endpoint.
+        It will not work for GitHub Models endpoint or Azure OpenAI endpoint.
 
         :return: ModelInfo. The ModelInfo is compatible with MutableMapping
         :rtype: ~azure.ai.inference.models.ModelInfo
@@ -797,12 +990,6 @@ class EmbeddingsClient(EmbeddingsClientGenerated):
         # pylint: disable=client-method-name-no-double-underscore
         return super().__str__() + f"\n{self._model_info}" if self._model_info else super().__str__()
 
-    # Remove this once https://github.com/Azure/autorest.python/issues/2619 is fixed,
-    # and you see the equivalent auto-generated method in _client.py return "Self"
-    async def __aenter__(self) -> Self:
-        await self._client.__aenter__()
-        return self
-
 
 class ImageEmbeddingsClient(ImageEmbeddingsClientGenerated):
     """ImageEmbeddingsClient.
@@ -810,9 +997,27 @@ class ImageEmbeddingsClient(ImageEmbeddingsClientGenerated):
     :param endpoint: Service host. Required.
     :type endpoint: str
     :param credential: Credential used to authenticate requests to the service. Is either a
-     AzureKeyCredential type or a TokenCredential type. Required.
+     AzureKeyCredential type or a AsyncTokenCredential type. Required.
     :type credential: ~azure.core.credentials.AzureKeyCredential or
      ~azure.core.credentials_async.AsyncTokenCredential
+    :keyword dimensions: Optional. The number of dimensions the resulting output embeddings should
+        have. Default value is None.
+    :paramtype dimensions: int
+    :keyword encoding_format: Optional. The desired format for the returned embeddings.
+        Known values are:
+        "base64", "binary", "float", "int8", "ubinary", and "uint8". Default value is None.
+    :paramtype encoding_format: str or ~azure.ai.inference.models.EmbeddingEncodingFormat
+    :keyword input_type: Optional. The type of the input. Known values are:
+        "text", "query", and "document". Default value is None.
+    :paramtype input_type: str or ~azure.ai.inference.models.EmbeddingInputType
+    :keyword model: ID of the specific AI model to use, if more than one model is available on the
+        endpoint. Default value is None.
+    :paramtype model: str
+    :keyword model_extras: Additional, model-specific parameters that are not in the
+        standard request payload. They will be added as-is to the root of the JSON in the request body.
+        How the service handles these extra parameters depends on the value of the
+        ``extra-parameters`` request header. Default value is None.
+    :paramtype model_extras: dict[str, Any]
     :keyword api_version: The API version to use for this operation. Default value is
      "2024-05-01-preview". Note that overriding this default value may result in unsupported
      behavior.
@@ -820,52 +1025,80 @@ class ImageEmbeddingsClient(ImageEmbeddingsClientGenerated):
     """
 
     def __init__(
-        self, endpoint: str, credential: Union[AzureKeyCredential, "AsyncTokenCredential"], **kwargs: Any
+        self,
+        endpoint: str,
+        credential: Union[AzureKeyCredential, "AsyncTokenCredential"],
+        *,
+        dimensions: Optional[int] = None,
+        encoding_format: Optional[Union[str, _models.EmbeddingEncodingFormat]] = None,
+        input_type: Optional[Union[str, _models.EmbeddingInputType]] = None,
+        model: Optional[str] = None,
+        model_extras: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> None:
+
         self._model_info: Optional[_models.ModelInfo] = None
-        super().__init__(endpoint=endpoint, credential=credential, **kwargs)
+
+        # Store default embeddings settings, to be applied in all future service calls
+        # unless overridden by arguments in the `embed` method.
+        self._dimensions = dimensions
+        self._encoding_format = encoding_format
+        self._input_type = input_type
+        self._model = model
+        self._model_extras = model_extras
+
+        # For Key auth, we need to send these two auth HTTP request headers simultaneously:
+        # 1. "Authorization: Bearer <key>"
+        # 2. "api-key: <key>"
+        # This is because Serverless API, Managed Compute and GitHub endpoints support the first header,
+        # and Azure OpenAI and the new Unified Inference endpoints support the second header.
+        # The first header will be taken care of by auto-generated code.
+        # The second one is added here.
+        if isinstance(credential, AzureKeyCredential):
+            headers = kwargs.pop("headers", {})
+            if "api-key" not in headers:
+                headers["api-key"] = credential.key
+            kwargs["headers"] = headers
+
+        super().__init__(endpoint, credential, **kwargs)
 
     @overload
     async def embed(
         self,
         *,
-        model_extras: Optional[Dict[str, Any]] = None,
-        input: List[_models.EmbeddingInput],
-        content_type: str = "application/json",
+        input: List[_models.ImageEmbeddingInput],
         dimensions: Optional[int] = None,
         encoding_format: Optional[Union[str, _models.EmbeddingEncodingFormat]] = None,
         input_type: Optional[Union[str, _models.EmbeddingInputType]] = None,
+        model: Optional[str] = None,
+        model_extras: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> _models.EmbeddingsResult:
         """Return the embedding vectors for given images.
         The method makes a REST API call to the `/images/embeddings` route on the given endpoint.
 
-        :keyword model_extras: Additional, model-specific parameters that are not in the
-         standard request payload. They will be added as-is to the root of the JSON in the request body.
-         How the service handles these extra parameters depends on the value of the
-         ``unknown-parameters`` request header. Default value is None.
-        :paramtype model_extras: dict[str, Any]
         :keyword input: Input image to embed. To embed multiple inputs in a single request, pass an
          array.
          The input must not exceed the max input tokens for the model. Required.
-        :paramtype input: list[~azure.ai.inference.models.EmbeddingInput]
-        :keyword content_type: Body Parameter content-type. Content type parameter for JSON body.
-         Default value is "application/json".
-        :paramtype content_type: str
+        :paramtype input: list[~azure.ai.inference.models.ImageEmbeddingInput]
         :keyword dimensions: Optional. The number of dimensions the resulting output embeddings should
-         have.
-         Passing null causes the model to use its default value.
-         Returns a 422 error if the model doesn't support the value or parameter. Default value is
-         None.
+         have. Default value is None.
         :paramtype dimensions: int
         :keyword encoding_format: Optional. The desired format for the returned embeddings.
          Known values are:
          "base64", "binary", "float", "int8", "ubinary", and "uint8". Default value is None.
         :paramtype encoding_format: str or ~azure.ai.inference.models.EmbeddingEncodingFormat
-        :keyword input_type: Optional. The type of the input.
-         Returns a 422 error if the model doesn't support the value or parameter. Known values are:
+        :keyword input_type: Optional. Known values are:
          "text", "query", and "document". Default value is None.
         :paramtype input_type: str or ~azure.ai.inference.models.EmbeddingInputType
+        :keyword model: ID of the specific AI model to use, if more than one model is available on the
+         endpoint. Default value is None.
+        :paramtype model: str
+        :keyword model_extras: Additional, model-specific parameters that are not in the
+         standard request payload. They will be added as-is to the root of the JSON in the request body.
+         How the service handles these extra parameters depends on the value of the
+         ``extra-parameters`` request header. Default value is None.
+        :paramtype model_extras: dict[str, Any]
         :return: EmbeddingsResult. The EmbeddingsResult is compatible with MutableMapping
         :rtype: ~azure.ai.inference.models.EmbeddingsResult
         :raises ~azure.core.exceptions.HttpResponseError:
@@ -919,11 +1152,12 @@ class ImageEmbeddingsClient(ImageEmbeddingsClientGenerated):
         self,
         body: Union[JSON, IO[bytes]] = _Unset,
         *,
-        model_extras: Optional[Dict[str, Any]] = None,
-        input: List[_models.EmbeddingInput] = _Unset,
+        input: List[_models.ImageEmbeddingInput] = _Unset,
         dimensions: Optional[int] = None,
         encoding_format: Optional[Union[str, _models.EmbeddingEncodingFormat]] = None,
         input_type: Optional[Union[str, _models.EmbeddingInputType]] = None,
+        model: Optional[str] = None,
+        model_extras: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> _models.EmbeddingsResult:
         # pylint: disable=line-too-long
@@ -933,29 +1167,28 @@ class ImageEmbeddingsClient(ImageEmbeddingsClientGenerated):
         :param body: Is either a MutableMapping[str, Any] type (like a dictionary) or a IO[bytes] type
          that specifies the full request payload. Required.
         :type body: JSON or IO[bytes]
-        :keyword model_extras: Additional, model-specific parameters that are not in the
-         standard request payload. They will be added as-is to the root of the JSON in the request body.
-         How the service handles these extra parameters depends on the value of the
-         ``unknown-parameters`` request header. Default value is None.
-        :paramtype model_extras: dict[str, Any]
         :keyword input: Input image to embed. To embed multiple inputs in a single request, pass an
          array.
          The input must not exceed the max input tokens for the model. Required.
-        :paramtype input: list[~azure.ai.inference.models.EmbeddingInput]
+        :paramtype input: list[~azure.ai.inference.models.ImageEmbeddingInput]
         :keyword dimensions: Optional. The number of dimensions the resulting output embeddings should
-         have.
-         Passing null causes the model to use its default value.
-         Returns a 422 error if the model doesn't support the value or parameter. Default value is
-         None.
+         have. Default value is None.
         :paramtype dimensions: int
         :keyword encoding_format: Optional. The desired format for the returned embeddings.
          Known values are:
          "base64", "binary", "float", "int8", "ubinary", and "uint8". Default value is None.
         :paramtype encoding_format: str or ~azure.ai.inference.models.EmbeddingEncodingFormat
-        :keyword input_type: Optional. The type of the input.
-         Returns a 422 error if the model doesn't support the value or parameter. Known values are:
+        :keyword input_type: Optional. The type of the input. Known values are:
          "text", "query", and "document". Default value is None.
         :paramtype input_type: str or ~azure.ai.inference.models.EmbeddingInputType
+        :keyword model: ID of the specific AI model to use, if more than one model is available on the
+         endpoint. Default value is None.
+        :paramtype model: str
+        :keyword model_extras: Additional, model-specific parameters that are not in the
+         standard request payload. They will be added as-is to the root of the JSON in the request body.
+         How the service handles these extra parameters depends on the value of the
+         ``extra-parameters`` request header. Default value is None.
+        :paramtype model_extras: dict[str, Any]
         :return: EmbeddingsResult. The EmbeddingsResult is compatible with MutableMapping
         :rtype: ~azure.ai.inference.models.EmbeddingsResult
         :raises ~azure.core.exceptions.HttpResponseError:
@@ -970,7 +1203,7 @@ class ImageEmbeddingsClient(ImageEmbeddingsClientGenerated):
 
         _headers = case_insensitive_dict(kwargs.pop("headers", {}) or {})
         _params = kwargs.pop("params", {}) or {}
-        _unknown_params: Union[_models._enums.UnknownParams, None] = None
+        _extra_parameters: Union[_models._enums.ExtraParameters, None] = None
 
         content_type: Optional[str] = kwargs.pop("content_type", _headers.pop("Content-Type", None))
 
@@ -978,14 +1211,18 @@ class ImageEmbeddingsClient(ImageEmbeddingsClientGenerated):
             if input is _Unset:
                 raise TypeError("missing required argument: input")
             body = {
-                "dimensions": dimensions,
-                "encoding_format": encoding_format,
                 "input": input,
-                "input_type": input_type,
+                "dimensions": dimensions if dimensions is not None else self._dimensions,
+                "encoding_format": encoding_format if encoding_format is not None else self._encoding_format,
+                "input_type": input_type if input_type is not None else self._input_type,
+                "model": model if model is not None else self._model,
             }
             if model_extras is not None and bool(model_extras):
                 body.update(model_extras)
-                _unknown_params = _models._enums.UnknownParams.PASS_THROUGH  # pylint: disable=protected-access
+                _extra_parameters = _models._enums.ExtraParameters.PASS_THROUGH  # pylint: disable=protected-access
+            elif self._model_extras is not None and bool(self._model_extras):
+                body.update(self._model_extras)
+                _extra_parameters = _models._enums.ExtraParameters.PASS_THROUGH  # pylint: disable=protected-access
             body = {k: v for k, v in body.items() if v is not None}
         content_type = content_type or "application/json"
         _content = None
@@ -995,7 +1232,7 @@ class ImageEmbeddingsClient(ImageEmbeddingsClientGenerated):
             _content = json.dumps(body, cls=SdkJSONEncoder, exclude_readonly=True)  # type: ignore
 
         _request = build_image_embeddings_embed_request(
-            unknown_params=_unknown_params,
+            extra_params=_extra_parameters,
             content_type=content_type,
             api_version=self._config.api_version,
             content=_content,
@@ -1023,7 +1260,9 @@ class ImageEmbeddingsClient(ImageEmbeddingsClientGenerated):
         if _stream:
             deserialized = response.iter_bytes()
         else:
-            deserialized = _deserialize(_models.EmbeddingsResult, response.json())
+            deserialized = _deserialize(
+                _models._patch.EmbeddingsResult, response.json()  # pylint: disable=protected-access
+            )
 
         return deserialized  # type: ignore
 
@@ -1031,6 +1270,9 @@ class ImageEmbeddingsClient(ImageEmbeddingsClientGenerated):
     async def get_model_info(self, **kwargs: Any) -> _models.ModelInfo:
         # pylint: disable=line-too-long
         """Returns information about the AI model.
+        The method makes a REST API call to the ``/info`` route on the given endpoint.
+        This method will only work when using Serverless API or Managed Compute endpoint.
+        It will not work for GitHub Models endpoint or Azure OpenAI endpoint.
 
         :return: ModelInfo. The ModelInfo is compatible with MutableMapping
         :rtype: ~azure.ai.inference.models.ModelInfo
@@ -1043,12 +1285,6 @@ class ImageEmbeddingsClient(ImageEmbeddingsClientGenerated):
     def __str__(self) -> str:
         # pylint: disable=client-method-name-no-double-underscore
         return super().__str__() + f"\n{self._model_info}" if self._model_info else super().__str__()
-
-    # Remove this once https://github.com/Azure/autorest.python/issues/2619 is fixed,
-    # and you see the equivalent auto-generated method in _client.py return "Self"
-    async def __aenter__(self) -> Self:
-        await self._client.__aenter__()
-        return self
 
 
 __all__: List[str] = [

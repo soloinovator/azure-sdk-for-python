@@ -121,9 +121,9 @@ class AgentUpgrade(_serialization.Model):
 
     :ivar desired_version: Specifies the version info w.r.t AgentUpgrade for the machine.
     :vartype desired_version: str
-    :ivar correlation_id: The correlation ID passed in from RSM per upgrade.
+    :ivar correlation_id: The correlation ID associated with an agent upgrade operation.
     :vartype correlation_id: str
-    :ivar enable_automatic_upgrade: Specifies if RSM should try to upgrade this machine.
+    :ivar enable_automatic_upgrade: Specifies if the machine's agent should be upgraded.
     :vartype enable_automatic_upgrade: bool
     :ivar last_attempt_desired_version: Specifies the version of the last attempt.
     :vartype last_attempt_desired_version: str
@@ -164,9 +164,9 @@ class AgentUpgrade(_serialization.Model):
         """
         :keyword desired_version: Specifies the version info w.r.t AgentUpgrade for the machine.
         :paramtype desired_version: str
-        :keyword correlation_id: The correlation ID passed in from RSM per upgrade.
+        :keyword correlation_id: The correlation ID associated with an agent upgrade operation.
         :paramtype correlation_id: str
-        :keyword enable_automatic_upgrade: Specifies if RSM should try to upgrade this machine.
+        :keyword enable_automatic_upgrade: Specifies if the machine's agent should be upgraded.
         :paramtype enable_automatic_upgrade: bool
         """
         super().__init__(**kwargs)
@@ -401,6 +401,73 @@ class ConnectionDetail(_serialization.Model):
         self.link_identifier = None
         self.group_id = None
         self.member_name = None
+
+
+class Disk(_serialization.Model):
+    """Describes a disk on the machine.
+
+    :ivar path: The path of the disk.
+    :vartype path: str
+    :ivar disk_type: The type of the disk.
+    :vartype disk_type: str
+    :ivar generated_id: The generated ID of the disk.
+    :vartype generated_id: str
+    :ivar id: The ID of the disk.
+    :vartype id: str
+    :ivar name: The name of the disk.
+    :vartype name: str
+    :ivar max_size_in_bytes: The size of the disk, in bytes.
+    :vartype max_size_in_bytes: int
+    :ivar used_space_in_bytes: The amount of space used on the disk, in bytes.
+    :vartype used_space_in_bytes: int
+    """
+
+    _attribute_map = {
+        "path": {"key": "path", "type": "str"},
+        "disk_type": {"key": "diskType", "type": "str"},
+        "generated_id": {"key": "generatedId", "type": "str"},
+        "id": {"key": "id", "type": "str"},
+        "name": {"key": "name", "type": "str"},
+        "max_size_in_bytes": {"key": "maxSizeInBytes", "type": "int"},
+        "used_space_in_bytes": {"key": "usedSpaceInBytes", "type": "int"},
+    }
+
+    def __init__(
+        self,
+        *,
+        path: Optional[str] = None,
+        disk_type: Optional[str] = None,
+        generated_id: Optional[str] = None,
+        id: Optional[str] = None,  # pylint: disable=redefined-builtin
+        name: Optional[str] = None,
+        max_size_in_bytes: Optional[int] = None,
+        used_space_in_bytes: Optional[int] = None,
+        **kwargs: Any
+    ) -> None:
+        """
+        :keyword path: The path of the disk.
+        :paramtype path: str
+        :keyword disk_type: The type of the disk.
+        :paramtype disk_type: str
+        :keyword generated_id: The generated ID of the disk.
+        :paramtype generated_id: str
+        :keyword id: The ID of the disk.
+        :paramtype id: str
+        :keyword name: The name of the disk.
+        :paramtype name: str
+        :keyword max_size_in_bytes: The size of the disk, in bytes.
+        :paramtype max_size_in_bytes: int
+        :keyword used_space_in_bytes: The amount of space used on the disk, in bytes.
+        :paramtype used_space_in_bytes: int
+        """
+        super().__init__(**kwargs)
+        self.path = path
+        self.disk_type = disk_type
+        self.generated_id = generated_id
+        self.id = id
+        self.name = name
+        self.max_size_in_bytes = max_size_in_bytes
+        self.used_space_in_bytes = used_space_in_bytes
 
 
 class ErrorAdditionalInfo(_serialization.Model):
@@ -796,6 +863,34 @@ class ExtensionValueListResult(_serialization.Model):
         self.value = None
 
 
+class FirmwareProfile(_serialization.Model):
+    """Describes the firmware of the machine.
+
+    Variables are only populated by the server, and will be ignored when sending a request.
+
+    :ivar serial_number: The serial number of the firmware.
+    :vartype serial_number: str
+    :ivar type: The type of the firmware.
+    :vartype type: str
+    """
+
+    _validation = {
+        "serial_number": {"readonly": True},
+        "type": {"readonly": True},
+    }
+
+    _attribute_map = {
+        "serial_number": {"key": "serialNumber", "type": "str"},
+        "type": {"key": "type", "type": "str"},
+    }
+
+    def __init__(self, **kwargs: Any) -> None:
+        """ """
+        super().__init__(**kwargs)
+        self.serial_number = None
+        self.type = None
+
+
 class TrackedResourceAutoGenerated(ResourceAutoGenerated):
     """The resource model definition for an Azure Resource Manager tracked top level resource which
     has 'tags' and a 'location'.
@@ -1017,6 +1112,39 @@ class GatewayUpdate(ResourceUpdate):
         """
         super().__init__(tags=tags, **kwargs)
         self.allowed_features = allowed_features
+
+
+class HardwareProfile(_serialization.Model):
+    """Describes the hardware of the machine.
+
+    Variables are only populated by the server, and will be ignored when sending a request.
+
+    :ivar total_physical_memory_in_bytes: The total physical memory on the machine.
+    :vartype total_physical_memory_in_bytes: int
+    :ivar number_of_cpu_sockets: The total number of CPU sockets available on the machine.
+    :vartype number_of_cpu_sockets: int
+    :ivar processors: The physical processors of the machine.
+    :vartype processors: list[~azure.mgmt.hybridcompute.models.Processor]
+    """
+
+    _validation = {
+        "total_physical_memory_in_bytes": {"readonly": True},
+        "number_of_cpu_sockets": {"readonly": True},
+        "processors": {"readonly": True},
+    }
+
+    _attribute_map = {
+        "total_physical_memory_in_bytes": {"key": "totalPhysicalMemoryInBytes", "type": "int"},
+        "number_of_cpu_sockets": {"key": "numberOfCpuSockets", "type": "int"},
+        "processors": {"key": "processors", "type": "[Processor]"},
+    }
+
+    def __init__(self, **kwargs: Any) -> None:
+        """ """
+        super().__init__(**kwargs)
+        self.total_physical_memory_in_bytes = None
+        self.number_of_cpu_sockets = None
+        self.processors = None
 
 
 class PrivateLinkScopesResource(_serialization.Model):
@@ -1752,18 +1880,22 @@ class LicenseProfile(TrackedResource):  # pylint: disable=too-many-instance-attr
      and "Deleted".
     :vartype provisioning_state: str or ~azure.mgmt.hybridcompute.models.ProvisioningState
     :ivar subscription_status: Indicates the subscription status of the product. Known values are:
-     "Unknown", "Enabling", "Enabled", and "Disabled".
+     "Unknown", "Enabling", "Enabled", "Disabled", "Disabling", and "Failed".
     :vartype subscription_status: str or
      ~azure.mgmt.hybridcompute.models.LicenseProfileSubscriptionStatus
     :ivar product_type: Indicates the product type of the license. Known values are:
      "WindowsServer" and "WindowsIoTEnterprise".
     :vartype product_type: str or ~azure.mgmt.hybridcompute.models.LicenseProfileProductType
-    :ivar billing_start_date: The timestamp in UTC when the billing starts.
-    :vartype billing_start_date: ~datetime.datetime
     :ivar enrollment_date: The timestamp in UTC when the user enrolls the feature.
     :vartype enrollment_date: ~datetime.datetime
+    :ivar billing_start_date: The timestamp in UTC when the billing starts.
+    :vartype billing_start_date: ~datetime.datetime
     :ivar disenrollment_date: The timestamp in UTC when the user disenrolled the feature.
     :vartype disenrollment_date: ~datetime.datetime
+    :ivar billing_end_date: The timestamp in UTC when the billing ends.
+    :vartype billing_end_date: ~datetime.datetime
+    :ivar error: The errors that were encountered during the feature enrollment or disenrollment.
+    :vartype error: ~azure.mgmt.hybridcompute.models.ErrorDetail
     :ivar product_features: The list of product features.
     :vartype product_features: list[~azure.mgmt.hybridcompute.models.ProductFeature]
     :ivar assigned_license_immutable_id: The guid id of the license.
@@ -1792,9 +1924,11 @@ class LicenseProfile(TrackedResource):  # pylint: disable=too-many-instance-attr
         "system_data": {"readonly": True},
         "location": {"required": True},
         "provisioning_state": {"readonly": True},
-        "billing_start_date": {"readonly": True},
         "enrollment_date": {"readonly": True},
+        "billing_start_date": {"readonly": True},
         "disenrollment_date": {"readonly": True},
+        "billing_end_date": {"readonly": True},
+        "error": {"readonly": True},
         "assigned_license_immutable_id": {"readonly": True},
         "esu_keys": {"readonly": True},
         "server_type": {"readonly": True},
@@ -1812,9 +1946,11 @@ class LicenseProfile(TrackedResource):  # pylint: disable=too-many-instance-attr
         "provisioning_state": {"key": "properties.provisioningState", "type": "str"},
         "subscription_status": {"key": "properties.productProfile.subscriptionStatus", "type": "str"},
         "product_type": {"key": "properties.productProfile.productType", "type": "str"},
-        "billing_start_date": {"key": "properties.productProfile.billingStartDate", "type": "iso-8601"},
         "enrollment_date": {"key": "properties.productProfile.enrollmentDate", "type": "iso-8601"},
+        "billing_start_date": {"key": "properties.productProfile.billingStartDate", "type": "iso-8601"},
         "disenrollment_date": {"key": "properties.productProfile.disenrollmentDate", "type": "iso-8601"},
+        "billing_end_date": {"key": "properties.productProfile.billingEndDate", "type": "iso-8601"},
+        "error": {"key": "properties.productProfile.error", "type": "ErrorDetail"},
         "product_features": {"key": "properties.productProfile.productFeatures", "type": "[ProductFeature]"},
         "assigned_license_immutable_id": {"key": "properties.esuProfile.assignedLicenseImmutableId", "type": "str"},
         "esu_keys": {"key": "properties.esuProfile.esuKeys", "type": "[EsuKey]"},
@@ -1846,7 +1982,7 @@ class LicenseProfile(TrackedResource):  # pylint: disable=too-many-instance-attr
         :keyword location: The geo-location where the resource lives. Required.
         :paramtype location: str
         :keyword subscription_status: Indicates the subscription status of the product. Known values
-         are: "Unknown", "Enabling", "Enabled", and "Disabled".
+         are: "Unknown", "Enabling", "Enabled", "Disabled", "Disabling", and "Failed".
         :paramtype subscription_status: str or
          ~azure.mgmt.hybridcompute.models.LicenseProfileSubscriptionStatus
         :keyword product_type: Indicates the product type of the license. Known values are:
@@ -1864,9 +2000,11 @@ class LicenseProfile(TrackedResource):  # pylint: disable=too-many-instance-attr
         self.provisioning_state = None
         self.subscription_status = subscription_status
         self.product_type = product_type
-        self.billing_start_date = None
         self.enrollment_date = None
+        self.billing_start_date = None
         self.disenrollment_date = None
+        self.billing_end_date = None
+        self.error = None
         self.product_features = product_features
         self.assigned_license_immutable_id = None
         self.esu_keys = None
@@ -1997,7 +2135,7 @@ class LicenseProfileArmEsuProperties(LicenseProfileArmEsuPropertiesWithoutAssign
         self.assigned_license = assigned_license
 
 
-class LicenseProfileMachineInstanceView(_serialization.Model):
+class LicenseProfileMachineInstanceView(_serialization.Model):  # pylint: disable=too-many-instance-attributes
     """License Profile Instance View in Machine Properties.
 
     Variables are only populated by the server, and will be ignored when sending a request.
@@ -2011,18 +2149,22 @@ class LicenseProfileMachineInstanceView(_serialization.Model):
     :vartype esu_profile:
      ~azure.mgmt.hybridcompute.models.LicenseProfileMachineInstanceViewEsuProperties
     :ivar subscription_status: Indicates the subscription status of the product. Known values are:
-     "Unknown", "Enabling", "Enabled", and "Disabled".
+     "Unknown", "Enabling", "Enabled", "Disabled", "Disabling", and "Failed".
     :vartype subscription_status: str or
      ~azure.mgmt.hybridcompute.models.LicenseProfileSubscriptionStatus
     :ivar product_type: Indicates the product type of the license. Known values are:
      "WindowsServer" and "WindowsIoTEnterprise".
     :vartype product_type: str or ~azure.mgmt.hybridcompute.models.LicenseProfileProductType
-    :ivar billing_start_date: The timestamp in UTC when the billing starts.
-    :vartype billing_start_date: ~datetime.datetime
     :ivar enrollment_date: The timestamp in UTC when the user enrolls the feature.
     :vartype enrollment_date: ~datetime.datetime
+    :ivar billing_start_date: The timestamp in UTC when the billing starts.
+    :vartype billing_start_date: ~datetime.datetime
     :ivar disenrollment_date: The timestamp in UTC when the user disenrolled the feature.
     :vartype disenrollment_date: ~datetime.datetime
+    :ivar billing_end_date: The timestamp in UTC when the billing ends.
+    :vartype billing_end_date: ~datetime.datetime
+    :ivar error: The errors that were encountered during the feature enrollment or disenrollment.
+    :vartype error: ~azure.mgmt.hybridcompute.models.ErrorDetail
     :ivar product_features: The list of product features.
     :vartype product_features: list[~azure.mgmt.hybridcompute.models.ProductFeature]
     :ivar software_assurance_customer: Specifies if this machine is licensed as part of a Software
@@ -2033,9 +2175,11 @@ class LicenseProfileMachineInstanceView(_serialization.Model):
     _validation = {
         "license_status": {"readonly": True},
         "license_channel": {"readonly": True},
-        "billing_start_date": {"readonly": True},
         "enrollment_date": {"readonly": True},
+        "billing_start_date": {"readonly": True},
         "disenrollment_date": {"readonly": True},
+        "billing_end_date": {"readonly": True},
+        "error": {"readonly": True},
     }
 
     _attribute_map = {
@@ -2044,9 +2188,11 @@ class LicenseProfileMachineInstanceView(_serialization.Model):
         "esu_profile": {"key": "esuProfile", "type": "LicenseProfileMachineInstanceViewEsuProperties"},
         "subscription_status": {"key": "productProfile.subscriptionStatus", "type": "str"},
         "product_type": {"key": "productProfile.productType", "type": "str"},
-        "billing_start_date": {"key": "productProfile.billingStartDate", "type": "iso-8601"},
         "enrollment_date": {"key": "productProfile.enrollmentDate", "type": "iso-8601"},
+        "billing_start_date": {"key": "productProfile.billingStartDate", "type": "iso-8601"},
         "disenrollment_date": {"key": "productProfile.disenrollmentDate", "type": "iso-8601"},
+        "billing_end_date": {"key": "productProfile.billingEndDate", "type": "iso-8601"},
+        "error": {"key": "productProfile.error", "type": "ErrorDetail"},
         "product_features": {"key": "productProfile.productFeatures", "type": "[ProductFeature]"},
         "software_assurance_customer": {"key": "softwareAssurance.softwareAssuranceCustomer", "type": "bool"},
     }
@@ -2066,7 +2212,7 @@ class LicenseProfileMachineInstanceView(_serialization.Model):
         :paramtype esu_profile:
          ~azure.mgmt.hybridcompute.models.LicenseProfileMachineInstanceViewEsuProperties
         :keyword subscription_status: Indicates the subscription status of the product. Known values
-         are: "Unknown", "Enabling", "Enabled", and "Disabled".
+         are: "Unknown", "Enabling", "Enabled", "Disabled", "Disabling", and "Failed".
         :paramtype subscription_status: str or
          ~azure.mgmt.hybridcompute.models.LicenseProfileSubscriptionStatus
         :keyword product_type: Indicates the product type of the license. Known values are:
@@ -2084,9 +2230,11 @@ class LicenseProfileMachineInstanceView(_serialization.Model):
         self.esu_profile = esu_profile
         self.subscription_status = subscription_status
         self.product_type = product_type
-        self.billing_start_date = None
         self.enrollment_date = None
+        self.billing_start_date = None
         self.disenrollment_date = None
+        self.billing_end_date = None
+        self.error = None
         self.product_features = product_features
         self.software_assurance_customer = software_assurance_customer
 
@@ -2505,6 +2653,12 @@ class Machine(TrackedResource):  # pylint: disable=too-many-instance-attributes
     :vartype agent_configuration: ~azure.mgmt.hybridcompute.models.AgentConfiguration
     :ivar service_statuses: Statuses of dependent services that are reported back to ARM.
     :vartype service_statuses: ~azure.mgmt.hybridcompute.models.ServiceStatuses
+    :ivar hardware_profile: Information about the machine's hardware.
+    :vartype hardware_profile: ~azure.mgmt.hybridcompute.models.HardwareProfile
+    :ivar storage_profile: Information about the machine's storage.
+    :vartype storage_profile: ~azure.mgmt.hybridcompute.models.StorageProfile
+    :ivar firmware_profile: Information about the machine's firmware.
+    :vartype firmware_profile: ~azure.mgmt.hybridcompute.models.FirmwareProfile
     :ivar cloud_metadata: The metadata of the cloud environment (Azure/GCP/AWS/OCI...).
     :vartype cloud_metadata: ~azure.mgmt.hybridcompute.models.CloudMetadata
     :ivar agent_upgrade: The info of the machine w.r.t Agent Upgrade.
@@ -2575,6 +2729,9 @@ class Machine(TrackedResource):  # pylint: disable=too-many-instance-attributes
         "location": {"required": True},
         "resources": {"readonly": True},
         "agent_configuration": {"readonly": True},
+        "hardware_profile": {"readonly": True},
+        "storage_profile": {"readonly": True},
+        "firmware_profile": {"readonly": True},
         "provisioning_state": {"readonly": True},
         "status": {"readonly": True},
         "last_status_change": {"readonly": True},
@@ -2607,6 +2764,9 @@ class Machine(TrackedResource):  # pylint: disable=too-many-instance-attributes
         "location_data": {"key": "properties.locationData", "type": "LocationData"},
         "agent_configuration": {"key": "properties.agentConfiguration", "type": "AgentConfiguration"},
         "service_statuses": {"key": "properties.serviceStatuses", "type": "ServiceStatuses"},
+        "hardware_profile": {"key": "properties.hardwareProfile", "type": "HardwareProfile"},
+        "storage_profile": {"key": "properties.storageProfile", "type": "StorageProfile"},
+        "firmware_profile": {"key": "properties.firmwareProfile", "type": "FirmwareProfile"},
         "cloud_metadata": {"key": "properties.cloudMetadata", "type": "CloudMetadata"},
         "agent_upgrade": {"key": "properties.agentUpgrade", "type": "AgentUpgrade"},
         "os_profile": {"key": "properties.osProfile", "type": "OSProfile"},
@@ -2706,6 +2866,9 @@ class Machine(TrackedResource):  # pylint: disable=too-many-instance-attributes
         self.location_data = location_data
         self.agent_configuration = None
         self.service_statuses = service_statuses
+        self.hardware_profile = None
+        self.storage_profile = None
+        self.firmware_profile = None
         self.cloud_metadata = cloud_metadata
         self.agent_upgrade = agent_upgrade
         self.os_profile = os_profile
@@ -3973,20 +4136,46 @@ class NetworkConfiguration(ProxyResourceAutoGenerated):
 class NetworkInterface(_serialization.Model):
     """Describes a network interface.
 
+    :ivar mac_address: Represents MAC address of the network interface.
+    :vartype mac_address: str
+    :ivar id: Represents the ID of the network interface.
+    :vartype id: str
+    :ivar name: Represents the name of the network interface.
+    :vartype name: str
     :ivar ip_addresses: The list of IP addresses in this interface.
     :vartype ip_addresses: list[~azure.mgmt.hybridcompute.models.IpAddress]
     """
 
     _attribute_map = {
+        "mac_address": {"key": "macAddress", "type": "str"},
+        "id": {"key": "id", "type": "str"},
+        "name": {"key": "name", "type": "str"},
         "ip_addresses": {"key": "ipAddresses", "type": "[IpAddress]"},
     }
 
-    def __init__(self, *, ip_addresses: Optional[List["_models.IpAddress"]] = None, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        *,
+        mac_address: Optional[str] = None,
+        id: Optional[str] = None,  # pylint: disable=redefined-builtin
+        name: Optional[str] = None,
+        ip_addresses: Optional[List["_models.IpAddress"]] = None,
+        **kwargs: Any
+    ) -> None:
         """
+        :keyword mac_address: Represents MAC address of the network interface.
+        :paramtype mac_address: str
+        :keyword id: Represents the ID of the network interface.
+        :paramtype id: str
+        :keyword name: Represents the name of the network interface.
+        :paramtype name: str
         :keyword ip_addresses: The list of IP addresses in this interface.
         :paramtype ip_addresses: list[~azure.mgmt.hybridcompute.models.IpAddress]
         """
         super().__init__(**kwargs)
+        self.mac_address = mac_address
+        self.id = id
+        self.name = name
         self.ip_addresses = ip_addresses
 
 
@@ -4146,6 +4335,27 @@ class NetworkSecurityPerimeterConfigurationListResult(_serialization.Model):  # 
         super().__init__(**kwargs)
         self.value = None
         self.next_link = None
+
+
+class NetworkSecurityPerimeterConfigurationReconcileResult(_serialization.Model):  # pylint: disable=name-too-long
+    """Result of network security perimeter configurations.
+
+    :ivar location: The URL of the resource used to check the status of the asynchronous operation.
+    :vartype location: str
+    """
+
+    _attribute_map = {
+        "location": {"key": "location", "type": "str"},
+    }
+
+    def __init__(self, *, location: Optional[str] = None, **kwargs: Any) -> None:
+        """
+        :keyword location: The URL of the resource used to check the status of the asynchronous
+         operation.
+        :paramtype location: str
+        """
+        super().__init__(**kwargs)
+        self.location = location
 
 
 class NetworkSecurityPerimeterProfile(_serialization.Model):
@@ -4338,17 +4548,30 @@ class OSProfile(_serialization.Model):
 class OSProfileLinuxConfiguration(_serialization.Model):
     """Specifies the linux configuration for update management.
 
+    Variables are only populated by the server, and will be ignored when sending a request.
+
     :ivar assessment_mode: Specifies the assessment mode. Known values are: "ImageDefault" and
      "AutomaticByPlatform".
     :vartype assessment_mode: str or ~azure.mgmt.hybridcompute.models.AssessmentModeTypes
     :ivar patch_mode: Specifies the patch mode. Known values are: "ImageDefault",
      "AutomaticByPlatform", "AutomaticByOS", and "Manual".
     :vartype patch_mode: str or ~azure.mgmt.hybridcompute.models.PatchModeTypes
+    :ivar enable_hotpatching: Captures the hotpatch capability enrollment intent of the customers,
+     which enables customers to patch their Windows machines without requiring a reboot.
+    :vartype enable_hotpatching: bool
+    :ivar status: Status of the hotpatch capability enrollment or disenrollment.
+    :vartype status: ~azure.mgmt.hybridcompute.models.PatchSettingsStatus
     """
+
+    _validation = {
+        "status": {"readonly": True},
+    }
 
     _attribute_map = {
         "assessment_mode": {"key": "patchSettings.assessmentMode", "type": "str"},
         "patch_mode": {"key": "patchSettings.patchMode", "type": "str"},
+        "enable_hotpatching": {"key": "patchSettings.enableHotpatching", "type": "bool"},
+        "status": {"key": "patchSettings.status", "type": "PatchSettingsStatus"},
     }
 
     def __init__(
@@ -4356,6 +4579,7 @@ class OSProfileLinuxConfiguration(_serialization.Model):
         *,
         assessment_mode: Optional[Union[str, "_models.AssessmentModeTypes"]] = None,
         patch_mode: Optional[Union[str, "_models.PatchModeTypes"]] = None,
+        enable_hotpatching: Optional[bool] = None,
         **kwargs: Any
     ) -> None:
         """
@@ -4365,26 +4589,44 @@ class OSProfileLinuxConfiguration(_serialization.Model):
         :keyword patch_mode: Specifies the patch mode. Known values are: "ImageDefault",
          "AutomaticByPlatform", "AutomaticByOS", and "Manual".
         :paramtype patch_mode: str or ~azure.mgmt.hybridcompute.models.PatchModeTypes
+        :keyword enable_hotpatching: Captures the hotpatch capability enrollment intent of the
+         customers, which enables customers to patch their Windows machines without requiring a reboot.
+        :paramtype enable_hotpatching: bool
         """
         super().__init__(**kwargs)
         self.assessment_mode = assessment_mode
         self.patch_mode = patch_mode
+        self.enable_hotpatching = enable_hotpatching
+        self.status = None
 
 
 class OSProfileWindowsConfiguration(_serialization.Model):
     """Specifies the windows configuration for update management.
 
+    Variables are only populated by the server, and will be ignored when sending a request.
+
     :ivar assessment_mode: Specifies the assessment mode. Known values are: "ImageDefault" and
      "AutomaticByPlatform".
     :vartype assessment_mode: str or ~azure.mgmt.hybridcompute.models.AssessmentModeTypes
     :ivar patch_mode: Specifies the patch mode. Known values are: "ImageDefault",
      "AutomaticByPlatform", "AutomaticByOS", and "Manual".
     :vartype patch_mode: str or ~azure.mgmt.hybridcompute.models.PatchModeTypes
+    :ivar enable_hotpatching: Captures the hotpatch capability enrollment intent of the customers,
+     which enables customers to patch their Windows machines without requiring a reboot.
+    :vartype enable_hotpatching: bool
+    :ivar status: Status of the hotpatch capability enrollment or disenrollment.
+    :vartype status: ~azure.mgmt.hybridcompute.models.PatchSettingsStatus
     """
+
+    _validation = {
+        "status": {"readonly": True},
+    }
 
     _attribute_map = {
         "assessment_mode": {"key": "patchSettings.assessmentMode", "type": "str"},
         "patch_mode": {"key": "patchSettings.patchMode", "type": "str"},
+        "enable_hotpatching": {"key": "patchSettings.enableHotpatching", "type": "bool"},
+        "status": {"key": "patchSettings.status", "type": "PatchSettingsStatus"},
     }
 
     def __init__(
@@ -4392,6 +4634,7 @@ class OSProfileWindowsConfiguration(_serialization.Model):
         *,
         assessment_mode: Optional[Union[str, "_models.AssessmentModeTypes"]] = None,
         patch_mode: Optional[Union[str, "_models.PatchModeTypes"]] = None,
+        enable_hotpatching: Optional[bool] = None,
         **kwargs: Any
     ) -> None:
         """
@@ -4401,10 +4644,57 @@ class OSProfileWindowsConfiguration(_serialization.Model):
         :keyword patch_mode: Specifies the patch mode. Known values are: "ImageDefault",
          "AutomaticByPlatform", "AutomaticByOS", and "Manual".
         :paramtype patch_mode: str or ~azure.mgmt.hybridcompute.models.PatchModeTypes
+        :keyword enable_hotpatching: Captures the hotpatch capability enrollment intent of the
+         customers, which enables customers to patch their Windows machines without requiring a reboot.
+        :paramtype enable_hotpatching: bool
         """
         super().__init__(**kwargs)
         self.assessment_mode = assessment_mode
         self.patch_mode = patch_mode
+        self.enable_hotpatching = enable_hotpatching
+        self.status = None
+
+
+class PatchSettingsStatus(_serialization.Model):
+    """Status of the hotpatch capability enrollment or disenrollment.
+
+    Variables are only populated by the server, and will be ignored when sending a request.
+
+    :ivar hotpatch_enablement_status: Indicates the current status of the hotpatch being enabled or
+     disabled. Known values are: "Unknown", "PendingEvaluation", "Disabled", "ActionRequired", and
+     "Enabled".
+    :vartype hotpatch_enablement_status: str or
+     ~azure.mgmt.hybridcompute.models.HotpatchEnablementStatus
+    :ivar error: The errors that were encountered during the hotpatch capability enrollment or
+     disenrollment.
+    :vartype error: ~azure.mgmt.hybridcompute.models.ErrorDetail
+    """
+
+    _validation = {
+        "error": {"readonly": True},
+    }
+
+    _attribute_map = {
+        "hotpatch_enablement_status": {"key": "hotpatchEnablementStatus", "type": "str"},
+        "error": {"key": "error", "type": "ErrorDetail"},
+    }
+
+    def __init__(
+        self,
+        *,
+        hotpatch_enablement_status: Optional[Union[str, "_models.HotpatchEnablementStatus"]] = None,
+        **kwargs: Any
+    ) -> None:
+        """
+        :keyword hotpatch_enablement_status: Indicates the current status of the hotpatch being enabled
+         or disabled. Known values are: "Unknown", "PendingEvaluation", "Disabled", "ActionRequired",
+         and "Enabled".
+        :paramtype hotpatch_enablement_status: str or
+         ~azure.mgmt.hybridcompute.models.HotpatchEnablementStatus
+        """
+        super().__init__(**kwargs)
+        self.hotpatch_enablement_status = hotpatch_enablement_status
+        self.error = None
 
 
 class PrivateEndpointConnection(ProxyResourceAutoGenerated):
@@ -4789,6 +5079,34 @@ class PrivateLinkServiceConnectionStateProperty(_serialization.Model):  # pylint
         self.actions_required = None
 
 
+class Processor(_serialization.Model):
+    """Describes the firmware of the machine.
+
+    Variables are only populated by the server, and will be ignored when sending a request.
+
+    :ivar name: The name of the processor.
+    :vartype name: str
+    :ivar number_of_cores: The total number of physical cores on the processor.
+    :vartype number_of_cores: int
+    """
+
+    _validation = {
+        "name": {"readonly": True},
+        "number_of_cores": {"readonly": True},
+    }
+
+    _attribute_map = {
+        "name": {"key": "name", "type": "str"},
+        "number_of_cores": {"key": "numberOfCores", "type": "int"},
+    }
+
+    def __init__(self, **kwargs: Any) -> None:
+        """ """
+        super().__init__(**kwargs)
+        self.name = None
+        self.number_of_cores = None
+
+
 class ProductFeature(_serialization.Model):
     """Product Feature.
 
@@ -4797,29 +5115,37 @@ class ProductFeature(_serialization.Model):
     :ivar name: Product feature name.
     :vartype name: str
     :ivar subscription_status: Indicates the current status of the product features. Known values
-     are: "Unknown", "Enabling", "Enabled", and "Disabled".
+     are: "Unknown", "Enabling", "Enabled", "Disabled", "Disabling", and "Failed".
     :vartype subscription_status: str or
      ~azure.mgmt.hybridcompute.models.LicenseProfileSubscriptionStatus
-    :ivar billing_start_date: The timestamp in UTC when the billing starts.
-    :vartype billing_start_date: ~datetime.datetime
     :ivar enrollment_date: The timestamp in UTC when the user enrolls the feature.
     :vartype enrollment_date: ~datetime.datetime
+    :ivar billing_start_date: The timestamp in UTC when the billing starts.
+    :vartype billing_start_date: ~datetime.datetime
     :ivar disenrollment_date: The timestamp in UTC when the user disenrolled the feature.
     :vartype disenrollment_date: ~datetime.datetime
+    :ivar billing_end_date: The timestamp in UTC when the billing ends.
+    :vartype billing_end_date: ~datetime.datetime
+    :ivar error: The errors that were encountered during the feature enrollment or disenrollment.
+    :vartype error: ~azure.mgmt.hybridcompute.models.ErrorDetail
     """
 
     _validation = {
-        "billing_start_date": {"readonly": True},
         "enrollment_date": {"readonly": True},
+        "billing_start_date": {"readonly": True},
         "disenrollment_date": {"readonly": True},
+        "billing_end_date": {"readonly": True},
+        "error": {"readonly": True},
     }
 
     _attribute_map = {
         "name": {"key": "name", "type": "str"},
         "subscription_status": {"key": "subscriptionStatus", "type": "str"},
-        "billing_start_date": {"key": "billingStartDate", "type": "iso-8601"},
         "enrollment_date": {"key": "enrollmentDate", "type": "iso-8601"},
+        "billing_start_date": {"key": "billingStartDate", "type": "iso-8601"},
         "disenrollment_date": {"key": "disenrollmentDate", "type": "iso-8601"},
+        "billing_end_date": {"key": "billingEndDate", "type": "iso-8601"},
+        "error": {"key": "error", "type": "ErrorDetail"},
     }
 
     def __init__(
@@ -4833,16 +5159,18 @@ class ProductFeature(_serialization.Model):
         :keyword name: Product feature name.
         :paramtype name: str
         :keyword subscription_status: Indicates the current status of the product features. Known
-         values are: "Unknown", "Enabling", "Enabled", and "Disabled".
+         values are: "Unknown", "Enabling", "Enabled", "Disabled", "Disabling", and "Failed".
         :paramtype subscription_status: str or
          ~azure.mgmt.hybridcompute.models.LicenseProfileSubscriptionStatus
         """
         super().__init__(**kwargs)
         self.name = name
         self.subscription_status = subscription_status
-        self.billing_start_date = None
         self.enrollment_date = None
+        self.billing_start_date = None
         self.disenrollment_date = None
+        self.billing_end_date = None
+        self.error = None
 
 
 class ProductFeatureUpdate(_serialization.Model):
@@ -5137,6 +5465,26 @@ class Settings(ProxyResourceAutoGenerated):
         super().__init__(**kwargs)
         self.tenant_id = None
         self.gateway_resource_id = gateway_resource_id
+
+
+class StorageProfile(_serialization.Model):
+    """Describes the storage configuration of the machine.
+
+    :ivar disks: The disks on the machine.
+    :vartype disks: list[~azure.mgmt.hybridcompute.models.Disk]
+    """
+
+    _attribute_map = {
+        "disks": {"key": "disks", "type": "[Disk]"},
+    }
+
+    def __init__(self, *, disks: Optional[List["_models.Disk"]] = None, **kwargs: Any) -> None:
+        """
+        :keyword disks: The disks on the machine.
+        :paramtype disks: list[~azure.mgmt.hybridcompute.models.Disk]
+        """
+        super().__init__(**kwargs)
+        self.disks = disks
 
 
 class Subnet(_serialization.Model):

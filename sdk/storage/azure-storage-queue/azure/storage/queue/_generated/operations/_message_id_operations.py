@@ -18,14 +18,12 @@ from azure.core.exceptions import (
     map_error,
 )
 from azure.core.pipeline import PipelineResponse
-from azure.core.pipeline.transport import HttpResponse
-from azure.core.rest import HttpRequest
+from azure.core.rest import HttpRequest, HttpResponse
 from azure.core.tracing.decorator import distributed_trace
 from azure.core.utils import case_insensitive_dict
 
 from .. import models as _models
 from .._serialization import Serializer
-from .._vendor import _convert_request
 
 if sys.version_info >= (3, 9):
     from collections.abc import MutableMapping
@@ -163,7 +161,7 @@ class MessageIdOperations:
          later than the expiry time. Required.
         :type visibilitytimeout: int
         :param timeout: The The timeout parameter is expressed in seconds. For more information, see <a
-         href="https://docs.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations>Setting
+         href="https://learn.microsoft.com/rest/api/storageservices/setting-timeouts-for-queue-service-operations>Setting
          Timeouts for Queue Service Operations.</a>. Default value is None.
         :type timeout: int
         :param request_id_parameter: Provides a client-generated, opaque value with a 1 KB character
@@ -207,7 +205,6 @@ class MessageIdOperations:
             headers=_headers,
             params=_params,
         )
-        _request = _convert_request(_request)
         _request.url = self._client.format_url(_request.url)
 
         _stream = False
@@ -244,7 +241,7 @@ class MessageIdOperations:
          call to the Get Messages or Update Message operation. Required.
         :type pop_receipt: str
         :param timeout: The The timeout parameter is expressed in seconds. For more information, see <a
-         href="https://docs.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations>Setting
+         href="https://learn.microsoft.com/rest/api/storageservices/setting-timeouts-for-queue-service-operations>Setting
          Timeouts for Queue Service Operations.</a>. Default value is None.
         :type timeout: int
         :param request_id_parameter: Provides a client-generated, opaque value with a 1 KB character
@@ -277,7 +274,6 @@ class MessageIdOperations:
             headers=_headers,
             params=_params,
         )
-        _request = _convert_request(_request)
         _request.url = self._client.format_url(_request.url)
 
         _stream = False

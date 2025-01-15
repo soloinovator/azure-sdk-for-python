@@ -13,11 +13,10 @@ from azure.core.pipeline import policies
 from .._version import VERSION
 
 if TYPE_CHECKING:
-    # pylint: disable=unused-import,ungrouped-imports
     from azure.core.credentials_async import AsyncTokenCredential
 
 
-class SchemaRegistryClientConfiguration:  # pylint: disable=too-many-instance-attributes,name-too-long
+class SchemaRegistryClientConfiguration:  # pylint: disable=too-many-instance-attributes
     """Configuration for SchemaRegistryClient.
 
     Note that all parameters used to create this instance are saved as instance

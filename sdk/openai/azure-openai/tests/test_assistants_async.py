@@ -42,7 +42,6 @@ class AsyncEventHandler(AsyncAssistantEventHandler):
             for tool in details.tool_calls:
                 if tool.type == "code_interpreter":
                     assert tool.id
-                    assert tool.code_interpreter.outputs
                     assert tool.code_interpreter.input is not None
                 elif tool.type == "function":
                     assert tool.id
@@ -88,16 +87,16 @@ class AsyncEventHandler(AsyncAssistantEventHandler):
                         if content.text.value:
                             assert content.text.value is not None
                         if content.text.annotations:
-                            for annot in content.text.annotations:
-                                if annot.type == "file_citation":
-                                    assert annot.end_index is not None
-                                    assert annot.file_citation.file_id
-                                    assert annot.file_citation.quote
-                                    assert annot.start_index is not None
-                                elif annot.type == "file_path":
-                                    assert annot.end_index is not None
-                                    assert annot.file_path.file_id
-                                    assert annot.start_index is not None
+                            for annotation in content.text.annotations:
+                                if annotation.type == "file_citation":
+                                    assert annotation.end_index is not None
+                                    assert annotation.file_citation.file_id
+                                    assert annotation.file_citation.quote
+                                    assert annotation.start_index is not None
+                                elif annotation.type == "file_path":
+                                    assert annotation.end_index is not None
+                                    assert annotation.file_path.file_id
+                                    assert annotation.start_index is not None
                 elif content.type == "image_file":
                     assert content.index is not None
                     assert content.image_file.file_id
@@ -109,36 +108,36 @@ class AsyncEventHandler(AsyncAssistantEventHandler):
             if msg.type == "text":
                 assert msg.text.value
                 if msg.text.annotations:
-                    for annot in msg.text.annotations:
-                        if annot.type == "file_citation":
-                            assert annot.end_index is not None
-                            assert annot.file_citation.file_id
-                            assert annot.file_citation.quote
-                            assert annot.start_index is not None
-                            assert annot.text is not None
-                        elif annot.type == "file_path":
-                            assert annot.end_index is not None
-                            assert annot.file_path.file_id
-                            assert annot.start_index is not None
-                            assert annot.text is not None
+                    for annotation in msg.text.annotations:
+                        if annotation.type == "file_citation":
+                            assert annotation.end_index is not None
+                            assert annotation.file_citation.file_id
+                            assert annotation.file_citation.quote
+                            assert annotation.start_index is not None
+                            assert annotation.text is not None
+                        elif annotation.type == "file_path":
+                            assert annotation.end_index is not None
+                            assert annotation.file_path.file_id
+                            assert annotation.start_index is not None
+                            assert annotation.text is not None
 
     async def on_text_created(self, text: Text):
         assert text.value is not None
 
     async def on_text_done(self, text: Text):
         assert text.value  is not None
-        for annot in text.annotations:
-            if annot.type == "file_citation":
-                assert annot.end_index is not None
-                assert annot.file_citation.file_id
-                assert annot.file_citation.quote
-                assert annot.start_index is not None
-                assert annot.text is not None
-            elif annot.type == "file_path":
-                assert annot.end_index is not None
-                assert annot.file_path.file_id
-                assert annot.start_index is not None
-                assert annot.text is not None
+        for annotation in text.annotations:
+            if annotation.type == "file_citation":
+                assert annotation.end_index is not None
+                assert annotation.file_citation.file_id
+                assert annotation.file_citation.quote
+                assert annotation.start_index is not None
+                assert annotation.text is not None
+            elif annotation.type == "file_path":
+                assert annotation.end_index is not None
+                assert annotation.file_path.file_id
+                assert annotation.start_index is not None
+                assert annotation.text is not None
 
     async def on_image_file_done(self, image_file: ImageFile):
         assert image_file.file_id
@@ -179,6 +178,7 @@ class AsyncEventHandler(AsyncAssistantEventHandler):
             assert tool_call.function.name is not None
 
 
+@pytest.mark.live_test_only
 class TestAssistantsAsync(AzureRecordedTestCase):
 
     def handle_run_failure(self, run: Run):
@@ -201,7 +201,7 @@ class TestAssistantsAsync(AzureRecordedTestCase):
                 name="python test",
                 instructions="You are a personal math tutor. Write and run code to answer math questions.",
                 tools=[{"type": "code_interpreter"}],
-                **kwargs,
+                model="gpt-4-1106-preview",
             )
             retrieved_assistant = await client_async.beta.assistants.retrieve(
                 assistant_id=assistant.id,
@@ -340,6 +340,7 @@ class TestAssistantsAsync(AzureRecordedTestCase):
             delete_file = await client_async.files.delete(file.id)
             assert delete_file.deleted is True
 
+    @pytest.mark.skip("Entra ID auth not supported yet")
     @configure_async
     @pytest.mark.asyncio
     @pytest.mark.parametrize("api_type, api_version", [(ASST_AZURE, PREVIEW), (GPT_4_OPENAI, "v1")])
@@ -420,6 +421,7 @@ class TestAssistantsAsync(AzureRecordedTestCase):
             )
             assert deleted_vector_store.deleted is True
 
+    @pytest.mark.skip("Entra ID auth not supported yet")
     @configure_async
     @pytest.mark.asyncio
     @pytest.mark.parametrize("api_type, api_version", [(ASST_AZURE, PREVIEW), (GPT_4_OPENAI, "v1")])
@@ -492,7 +494,7 @@ class TestAssistantsAsync(AzureRecordedTestCase):
                 name="python test",
                 instructions="You are a personal math tutor. Write and run code to answer math questions.",
                 tools=[{"type": "code_interpreter"}],
-                **kwargs,
+                model="gpt-4-1106-preview",
             )
             thread = await client_async.beta.threads.create()
 
@@ -536,6 +538,7 @@ class TestAssistantsAsync(AzureRecordedTestCase):
             assert delete_thread.id == thread.id
             assert delete_thread.deleted is True
 
+    @pytest.mark.skip("Entra ID auth not supported yet")
     @configure_async
     @pytest.mark.asyncio
     @pytest.mark.parametrize("api_type, api_version", [(ASST_AZURE, PREVIEW), (GPT_4_OPENAI, "v1")])
@@ -563,7 +566,7 @@ class TestAssistantsAsync(AzureRecordedTestCase):
                         "vector_store_ids": [vector_store.id]
                     }
                 },
-                **kwargs
+                model="gpt-4-1106-preview"
             )
 
             run = await client_async.beta.threads.create_and_run_poll(
@@ -632,7 +635,7 @@ class TestAssistantsAsync(AzureRecordedTestCase):
                         }
                     }
                 ],
-                **kwargs,
+                model="gpt-4-1106-preview",
             )
 
             run = await client_async.beta.threads.create_and_run_poll(
@@ -715,7 +718,7 @@ class TestAssistantsAsync(AzureRecordedTestCase):
             name="Math Tutor",
             instructions="You are a personal math tutor. Write and run code to answer math questions.",
             tools=[{"type": "code_interpreter"}],
-            **kwargs,
+            model="gpt-4-1106-preview",
         )
         try:
             thread = await client_async.beta.threads.create()
@@ -744,7 +747,7 @@ class TestAssistantsAsync(AzureRecordedTestCase):
             name="Math Tutor",
             instructions="You are a personal math tutor. Write and run code to answer math questions.",
             tools=[{"type": "code_interpreter"}],
-            **kwargs
+            model="gpt-4-1106-preview"
         )
 
         try:

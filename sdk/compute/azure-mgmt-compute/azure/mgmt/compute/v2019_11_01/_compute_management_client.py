@@ -8,6 +8,7 @@
 
 from copy import deepcopy
 from typing import Any, TYPE_CHECKING
+from typing_extensions import Self
 
 from azure.core.pipeline import policies
 from azure.core.rest import HttpRequest, HttpResponse
@@ -20,11 +21,10 @@ from ._configuration import ComputeManagementClientConfiguration
 from .operations import DiskEncryptionSetsOperations, DisksOperations, SnapshotsOperations
 
 if TYPE_CHECKING:
-    # pylint: disable=unused-import,ungrouped-imports
     from azure.core.credentials import TokenCredential
 
 
-class ComputeManagementClient:  # pylint: disable=client-accepts-api-version-keyword
+class ComputeManagementClient:
     """Compute Client.
 
     :ivar disks: DisksOperations operations
@@ -115,7 +115,7 @@ class ComputeManagementClient:  # pylint: disable=client-accepts-api-version-key
     def close(self) -> None:
         self._client.close()
 
-    def __enter__(self) -> "ComputeManagementClient":
+    def __enter__(self) -> Self:
         self._client.__enter__()
         return self
 

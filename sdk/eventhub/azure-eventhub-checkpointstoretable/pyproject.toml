@@ -4,4 +4,5 @@ pyright = false
 type_check_samples = false
 verifytypes = false
 pylint = false
-strict_sphinx = true
+black = false
+ci_enabled = false

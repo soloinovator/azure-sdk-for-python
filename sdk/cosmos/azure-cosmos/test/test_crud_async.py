@@ -1631,8 +1631,8 @@ class TestCRUDOperationsAsync(unittest.IsolatedAsyncioTestCase):
                 ]
             ]
         }
-
-        custom_logger = logging.getLogger("CustomLogger")
+        # TODO: Check why custom logger was previously used
+        # custom_logger = logging.getLogger("CustomLogger")
         created_container = await db.create_container(
             id='composite_index_spatial_index' + str(uuid.uuid4()),
             indexing_policy=indexing_policy,
@@ -1641,9 +1641,9 @@ class TestCRUDOperationsAsync(unittest.IsolatedAsyncioTestCase):
             user_agent="blah",
             user_agent_overwrite=True,
             logging_enable=True,
-            logger=custom_logger,
         )
-        created_properties = await created_container.read(logger=custom_logger)
+        # TODO: Check why custom logger was previously used for container read
+        created_properties = await created_container.read()
         read_indexing_policy = created_properties['indexingPolicy']
 
         if 'localhost' in self.host or '127.0.0.1' in self.host:  # TODO: Differing result between live and emulator
@@ -2225,50 +2225,52 @@ class TestCRUDOperationsAsync(unittest.IsolatedAsyncioTestCase):
         read_permission = await created_user.get_permission(created_permission.properties)
         assert read_permission.id == created_permission.id
 
-    # Commenting out delete all items by pk until pipelines support it
-    #
-    # async def test_delete_all_items_by_partition_key(self):
-    #     # create database
-    #     created_db = self.database_for_test
-    #
-    #     # create container
-    #     created_collection = await created_db.create_container(
-    #         id='test_delete_all_items_by_partition_key ' + str(uuid.uuid4()),
-    #         partition_key=PartitionKey(path='/pk', kind='Hash')
-    #     )
-    #     # Create two partition keys
-    #     partition_key1 = "{}-{}".format("Partition Key 1", str(uuid.uuid4()))
-    #     partition_key2 = "{}-{}".format("Partition Key 2", str(uuid.uuid4()))
-    #
-    #     # add items for partition key 1
-    #     for i in range(1, 3):
-    #         await created_collection.upsert_item(
-    #             dict(id="item{}".format(i), pk=partition_key1)
-    #         )
-    #
-    #     # add items for partition key 2
-    #     pk2_item = await created_collection.upsert_item(dict(id="item{}".format(3), pk=partition_key2))
-    #
-    #     # delete all items for partition key 1
-    #     await created_collection.delete_all_items_by_partition_key(partition_key1)
-    #
-    #     # check that only items from partition key 1 have been deleted
-    #     items = [item async for item in created_collection.read_all_items()]
-    #
-    #     # items should only have 1 item, and it should equal pk2_item
-    #     self.assertDictEqual(pk2_item, items[0])
-    #
-    #     # attempting to delete a non-existent partition key or passing none should not delete
-    #     # anything and leave things unchanged
-    #     await created_collection.delete_all_items_by_partition_key(None)
-    #
-    #     # check that no changes were made by checking if the only item is still there
-    #     items = [item async for item in created_collection.read_all_items()]
-    #
-    #     # items should only have 1 item, and it should equal pk2_item
-    #     self.assertDictEqual(pk2_item, items[0])
-    #
-    #     await created_db.delete_container(created_collection)
+
+    async def test_delete_all_items_by_partition_key_async(self):
+        # enable the test only for the emulator
+        if "localhost" not in self.host and "127.0.0.1" not in self.host:
+            return
+        # create database
+        created_db = self.database_for_test
+
+        # create container
+        created_collection = await created_db.create_container(
+            id='test_delete_all_items_by_partition_key ' + str(uuid.uuid4()),
+            partition_key=PartitionKey(path='/pk', kind='Hash')
+        )
+        # Create two partition keys
+        partition_key1 = "{}-{}".format("Partition Key 1", str(uuid.uuid4()))
+        partition_key2 = "{}-{}".format("Partition Key 2", str(uuid.uuid4()))
+
+        # add items for partition key 1
+        for i in range(1, 3):
+            await created_collection.upsert_item(
+                dict(id="item{}".format(i), pk=partition_key1)
+            )
+
+        # add items for partition key 2
+        pk2_item = await created_collection.upsert_item(dict(id="item{}".format(3), pk=partition_key2))
+
+        # delete all items for partition key 1
+        await created_collection.delete_all_items_by_partition_key(partition_key1)
+
+        # check that only items from partition key 1 have been deleted
+        items = [item async for item in created_collection.read_all_items()]
+
+        # items should only have 1 item, and it should equal pk2_item
+        self.assertDictEqual(pk2_item, items[0])
+
+        # attempting to delete a non-existent partition key or passing none should not delete
+        # anything and leave things unchanged
+        await created_collection.delete_all_items_by_partition_key(None)
+
+        # check that no changes were made by checking if the only item is still there
+        items = [item async for item in created_collection.read_all_items()]
+
+        # items should only have 1 item, and it should equal pk2_item
+        self.assertDictEqual(pk2_item, items[0])
+
+        await created_db.delete_container(created_collection)
 
     async def test_patch_operations_async(self):
 
@@ -2499,8 +2501,8 @@ class TestCRUDOperationsAsync(unittest.IsolatedAsyncioTestCase):
         _retry_utility_async.ExecuteFunctionAsync = self.OriginalExecuteFunction
 
     async def _mock_execute_function(self, function, *args, **kwargs):
-        self.last_headers.append(args[4].headers[HttpHeaders.PartitionKey]
-                                 if HttpHeaders.PartitionKey in args[4].headers else '')
+        if HttpHeaders.PartitionKey in args[4].headers:
+            self.last_headers.append(args[4].headers[HttpHeaders.PartitionKey])
         return await self.OriginalExecuteFunction(function, *args, **kwargs)
 
 

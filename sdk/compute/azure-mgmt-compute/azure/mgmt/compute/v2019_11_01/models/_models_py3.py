@@ -1,5 +1,5 @@
-# coding=utf-8
 # pylint: disable=too-many-lines
+# coding=utf-8
 # --------------------------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License. See License.txt in the project root for license information.
@@ -12,7 +12,6 @@ from typing import Any, Dict, List, Optional, TYPE_CHECKING, Union
 from ... import _serialization
 
 if TYPE_CHECKING:
-    # pylint: disable=unused-import,ungrouped-imports
     from .. import models as _models
 
 
@@ -134,7 +133,8 @@ class CreationData(_serialization.Model):
     All required parameters must be populated in order to send to server.
 
     :ivar create_option: This enumerates the possible sources of a disk's creation. Required. Known
-     values are: "Empty", "Attach", "FromImage", "Import", "Copy", "Restore", and "Upload".
+     values are: "Empty", "Attach", "FromImage", "Import", "Copy", "Restore", "Upload", and
+     "Import".
     :vartype create_option: str or ~azure.mgmt.compute.v2019_11_01.models.DiskCreateOption
     :ivar storage_account_id: Required if createOption is Import. The Azure Resource Manager
      identifier of the storage account containing the blob to import as a disk.
@@ -190,7 +190,8 @@ class CreationData(_serialization.Model):
     ) -> None:
         """
         :keyword create_option: This enumerates the possible sources of a disk's creation. Required.
-         Known values are: "Empty", "Attach", "FromImage", "Import", "Copy", "Restore", and "Upload".
+         Known values are: "Empty", "Attach", "FromImage", "Import", "Copy", "Restore", "Upload", and
+         "Import".
         :paramtype create_option: str or ~azure.mgmt.compute.v2019_11_01.models.DiskCreateOption
         :keyword storage_account_id: Required if createOption is Import. The Azure Resource Manager
          identifier of the storage account containing the blob to import as a disk.
@@ -272,7 +273,7 @@ class Resource(_serialization.Model):
         self.tags = tags
 
 
-class Disk(Resource):  # pylint: disable=too-many-instance-attributes
+class Disk(Resource):
     """Disk resource.
 
     Variables are only populated by the server, and will be ignored when sending a request.
@@ -706,7 +707,7 @@ class DiskSku(_serialization.Model):
         self.tier = None
 
 
-class DiskUpdate(_serialization.Model):  # pylint: disable=too-many-instance-attributes
+class DiskUpdate(_serialization.Model):
     """Disk update resource.
 
     :ivar tags: Resource tags.
@@ -1193,7 +1194,7 @@ class ShareInfoElement(_serialization.Model):
         self.vm_uri = None
 
 
-class Snapshot(Resource):  # pylint: disable=too-many-instance-attributes
+class Snapshot(Resource):
     """Snapshot resource.
 
     Variables are only populated by the server, and will be ignored when sending a request.

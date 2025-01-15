@@ -19,11 +19,10 @@ from ._configuration import SchemaRegistryClientConfiguration
 from ._operations import SchemaRegistryClientOperationsMixin
 
 if TYPE_CHECKING:
-    # pylint: disable=unused-import,ungrouped-imports
     from azure.core.credentials_async import AsyncTokenCredential
 
 
-class SchemaRegistryClient(SchemaRegistryClientOperationsMixin):  # pylint: disable=client-accepts-api-version-keyword
+class SchemaRegistryClient(SchemaRegistryClientOperationsMixin):
     """SchemaRegistryClient is a client for registering and retrieving schemas from the Azure Schema
     Registry service.
 
@@ -38,7 +37,6 @@ class SchemaRegistryClient(SchemaRegistryClientOperationsMixin):  # pylint: disa
     """
 
     def __init__(self, fully_qualified_namespace: str, credential: "AsyncTokenCredential", **kwargs: Any) -> None:
-        super().__init__()
         _endpoint = "https://{fullyQualifiedNamespace}"
         self._config = SchemaRegistryClientConfiguration(
             fully_qualified_namespace=fully_qualified_namespace, credential=credential, **kwargs
